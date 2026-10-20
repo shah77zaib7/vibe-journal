@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-pnl="color">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+<title>VibeJournal — Trading Journal</title>
+<meta name="description" content="A private, offline-first trading journal. Your data never leaves your device." />
+
+<meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#F9F9FB" media="(prefers-color-scheme: light)" />
+<meta name="color-scheme" content="dark light" />
+
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="VibeJournal" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ───────────────────────── icon sprite ───────────────────────── -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+<defs>
+  <symbol id="i-dash" viewBox="0 0 24 24"><path d="M4 13h6v7H4zM14 4h6v16h-6zM4 4h6v5H4z"/></symbol>
+  <symbol id="i-journal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v16H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 9h7M8 13h5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7.5 15.5l3.5-4.5 3 2.5 4.5-6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.6a1.6 1.6 0 0 0 1-1.47V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-chev-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l2 2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M6.5 7l.8 12.1A1.9 1.9 0 0 0 9.2 21h5.6a1.9 1.9 0 0 0 1.9-1.9L17.5 7"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4.5 17l4.8-4.4 3.4 3 3.2-2.6 3.6 3.1"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.6h17M8.2 3.5v3M15.8 3.5v3"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11M7.5 10L12 14.5 16.5 10"/><path d="M4.5 16.5v2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-2"/></symbol>
+  <symbol id="i-ul" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5v-11M7.5 8L12 3.5 16.5 8"/><path d="M4.5 16.5v2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-2"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M4.3 4.3l1.6 1.6M18.1 18.1l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.3 19.7l1.6-1.6M18.1 5.9l1.6-1.6"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.3A8.4 8.4 0 0 1 9.7 4 8.5 8.5 0 1 0 20 14.3z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2L4.6 13.4h5.6L9.9 22l8.7-11.5h-5.7z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.6"/><path d="M12 1.6v2.4M12 20v2.4M22.4 12H20M4 12H1.6"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.2V5.5A2 2 0 0 1 5.5 3.5h5.7a2 2 0 0 1 1.4.6l8 8a2 2 0 0 1 0 2.8l-5.7 5.7a2 2 0 0 1-2.8 0l-8-8a2 2 0 0 1-.6-1.4z"/><circle cx="8" cy="8" r="1.3"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h7.5L19 9v11.5H6z"/><path d="M13.2 3.5V9H19M9 13h6M9 16.5h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5L21 19.5H3z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5A2.5 2.5 0 0 1 6 6h12.5A2 2 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19H6a2.5 2.5 0 0 1-2.5-2.5z"/><path d="M3.5 9.5h13a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-13"/><circle cx="16" cy="12" r=".9" fill="currentColor"/></symbol>
+</defs>
+</svg>
+
+<!-- decorative depth blobs (grayscale only) -->
+<!-- Painted as gradients rather than blurred divs: a filter:blur() layer this
+     large re-rasterises on every scroll frame and was the last mobile stall. -->
+<div class="backdrop" aria-hidden="true"></div>
+
+<!-- ───────────────────────── sidebar (desktop) ───────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <span class="brand-mark"><svg class="ic"><use href="#i-bolt"/></svg></span>
+    <span class="brand-text"><b>Vibe</b>Journal</span>
+  </div>
+
+  <button class="btn-solid btn-new" data-action="new-trade">
+    <svg class="ic"><use href="#i-plus"/></svg><span>New trade</span>
+  </button>
+
+  <nav class="side-nav" aria-label="Primary">
+    <button class="nav-item is-active" data-nav="dashboard"><svg class="ic"><use href="#i-dash"/></svg><span>Dashboard</span></button>
+    <button class="nav-item" data-nav="journal"><svg class="ic"><use href="#i-journal"/></svg><span>Journal</span><em class="nav-badge" id="navCount">0</em></button>
+    <button class="nav-item" data-nav="analytics"><svg class="ic"><use href="#i-chart"/></svg><span>Analytics</span></button>
+    <button class="nav-item" data-nav="settings"><svg class="ic"><use href="#i-gear"/></svg><span>Settings</span></button>
+  </nav>
+
+  <div class="side-foot">
+    <div class="privacy-note">
+      <svg class="ic"><use href="#i-target"/></svg>
+      <div><b>Local only</b><span>Your journal never leaves this device.</span></div>
+    </div>
+    <div class="storage-meter" title="Local storage used">
+      <div class="storage-bar"><i id="storageFill"></i></div>
+      <span id="storageText">— KB used</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ───────────────────────── main ───────────────────────── -->
+<main class="main" id="main">
+
+  <!-- top app bar -->
+  <header class="appbar">
+    <div class="appbar-in">
+      <div class="appbar-titles">
+        <h1 id="viewTitle">Dashboard</h1>
+        <p id="viewSub" class="appbar-sub"></p>
+      </div>
+      <div class="appbar-actions">
+        <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><svg class="ic"><use href="#i-moon"/></svg></button>
+        <button class="icon-btn only-mobile" data-action="open-search" aria-label="Search"><svg class="ic"><use href="#i-search"/></svg></button>
+        <button class="btn-solid only-desktop" data-action="new-trade"><svg class="ic"><use href="#i-plus"/></svg><span>New trade</span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="views" id="views">
+
+    <!-- ══════════ DASHBOARD ══════════ -->
+    <section class="view is-active" data-view="dashboard">
+
+      <div class="hero">
+        <div class="hero-top">
+          <div>
+            <span class="eyebrow">Net P&amp;L</span>
+            <div class="hero-value" id="heroPnl">$0.00</div>
+            <div class="hero-meta">
+              <span class="delta" id="heroDelta"><svg class="ic xs"><use href="#i-up"/></svg><span>0.00%</span></span>
+              <span class="dot-sep"></span>
+              <span id="heroBal">Balance $0.00</span>
+            </div>
+          </div>
+          <div class="hero-ring">
+            <svg viewBox="0 0 120 120" class="ring">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" cx="60" cy="60" r="52" id="winRing"/>
+            </svg>
+            <div class="ring-label"><b id="heroWR">—</b><span>win rate</span></div>
+          </div>
+        </div>
+        <div class="hero-chart">
+          <canvas id="equityChart"></canvas>
+          <div class="chart-empty" id="equityEmpty" hidden>No closed trades in this period</div>
+        </div>
+        <div class="hero-foot">
+          <button class="range-pill is-active" data-range="30">30D</button>
+          <button class="range-pill" data-range="90">90D</button>
+          <button class="range-pill" data-range="180">6M</button>
+          <button class="range-pill" data-range="365">1Y</button>
+          <button class="range-pill" data-range="0">ALL</button>
+        </div>
+      </div>
+
+      <div class="stat-grid" id="statGrid">
+        <button class="stat-card" data-goto="analytics">
+          <span class="stat-ic"><svg class="ic"><use href="#i-journal"/></svg></span>
+          <span class="stat-k">Total trades</span>
+          <span class="stat-v" id="sTrades">0</span>
+          <span class="stat-f" id="sTradesSub">0 closed</span>
+        </button>
+        <button class="stat-card" data-goto="analytics">
+          <span class="stat-ic"><svg class="ic"><use href="#i-target"/></svg></span>
+          <span class="stat-k">Profit factor</span>
+          <span class="stat-v" id="sPF">—</span>
+          <span class="stat-f" id="sPFSub">&nbsp;</span>
+        </button>
+        <button class="stat-card" data-goto="analytics">
+          <span class="stat-ic"><svg class="ic"><use href="#i-chart"/></svg></span>
+          <span class="stat-k">Avg R:R</span>
+          <span class="stat-v" id="sRR">—</span>
+          <span class="stat-f" id="sRRSub">&nbsp;</span>
+        </button>
+        <button class="stat-card" data-goto="analytics">
+          <span class="stat-ic"><svg class="ic"><use href="#i-wallet"/></svg></span>
+          <span class="stat-k">Avg risk</span>
+          <span class="stat-v" id="sRisk">—</span>
+          <span class="stat-f" id="sRiskSub">&nbsp;</span>
+        </button>
+      </div>
+
+      <div class="split">
+        <section class="glass panel">
+          <header class="panel-head">
+            <h2>Recent trades</h2>
+            <button class="link-btn" data-goto="journal">View all<svg class="ic xs"><use href="#i-chev-r"/></svg></button>
+          </header>
+          <div id="recentList" class="trade-list"></div>
+        </section>
+
+        <div class="col">
+          <section class="glass panel">
+            <header class="panel-head"><h2>By strategy</h2></header>
+            <div class="chart-box sm"><canvas id="stratChart"></canvas><div class="chart-empty" id="stratEmpty" hidden>No strategies yet</div></div>
+            <div id="stratList" class="mini-list"></div>
+          </section>
+          <section class="glass panel">
+            <header class="panel-head"><h2>Results</h2></header>
+            <div class="chart-box sm"><canvas id="resultChart"></canvas><div class="chart-empty" id="resultEmpty" hidden>No closed trades yet</div></div>
+            <div class="donut-legend" id="resultLegend"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ JOURNAL ══════════ -->
+    <section class="view" data-view="journal">
+      <div class="toolbar glass">
+        <label class="search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input id="q" type="search" placeholder="Search symbol, strategy, notes, tags…" autocomplete="off" />
+        </label>
+        <button class="btn-ghost" id="filterBtn"><svg class="ic"><use href="#i-filter"/></svg><span>Filters</span><em class="pill-count" id="filterCount" hidden>0</em></button>
+        <button class="btn-ghost" id="sortBtn"><svg class="ic"><use href="#i-sort"/></svg><span id="sortLabel">Newest</span></button>
+      </div>
+
+      <div class="filter-panel glass" id="filterPanel" hidden>
+        <div class="fg">
+          <label class="lbl">From</label><input type="date" id="fFrom" class="input" />
+        </div>
+        <div class="fg">
+          <label class="lbl">To</label><input type="date" id="fTo" class="input" />
+        </div>
+        <div class="fg">
+          <label class="lbl">Pair</label><select id="fPair" class="input"><option value="">All pairs</option></select>
+        </div>
+        <div class="fg">
+          <label class="lbl">Strategy</label><select id="fStrat" class="input"><option value="">All strategies</option></select>
+        </div>
+        <div class="fg">
+          <label class="lbl">Result</label>
+          <select id="fResult" class="input">
+            <option value="">All results</option><option value="win">Win</option>
+            <option value="loss">Loss</option><option value="be">Breakeven</option><option value="open">Open</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="lbl">Direction</label>
+          <select id="fDir" class="input"><option value="">Both</option><option value="buy">Buy</option><option value="sell">Sell</option></select>
+        </div>
+        <div class="fg fg-wide">
+          <label class="lbl">Tags</label>
+          <div class="tag-row" id="fTags"></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-ghost sm" id="clearFilters">Clear all</button>
+          <button class="btn-solid sm" id="applyFilters">Apply</button>
+        </div>
+      </div>
+
+      <div class="journal-head">
+        <div class="chips" id="activeChips"></div>
+        <span class="result-count" id="resultCount">0 trades</span>
+      </div>
+
+      <div class="glass table-wrap">
+        <table class="tbl" id="tradeTable">
+          <thead>
+            <tr>
+              <th data-sort="dt" class="sortable">Date</th>
+              <th data-sort="symbol" class="sortable">Pair</th>
+              <th data-sort="direction" class="sortable">Side</th>
+              <th data-sort="entry" class="sortable num">Entry</th>
+              <th data-sort="plannedRR" class="sortable num hide-sm">R:R</th>
+              <th data-sort="riskAmount" class="sortable num hide-sm">Risk</th>
+              <th data-sort="pnl" class="sortable num">P&amp;L</th>
+              <th data-sort="result" class="sortable">Result</th>
+              <th data-sort="strategy" class="sortable hide-md">Strategy</th>
+              <th class="right"></th>
+            </tr>
+          </thead>
+          <tbody id="tradeRows"></tbody>
+        </table>
+        <div class="empty" id="journalEmpty" hidden>
+          <span class="empty-ic"><svg class="ic"><use href="#i-journal"/></svg></span>
+          <h3>No trades here</h3>
+          <p>Adjust your filters, or log your first trade to start your journal.</p>
+          <div class="empty-actions">
+            <button class="btn-solid sm" data-action="new-trade"><svg class="ic"><use href="#i-plus"/></svg><span>Log a trade</span></button>
+            <button class="btn-ghost sm" data-action="load-sample">Load sample data</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ ANALYTICS ══════════ -->
+    <section class="view" data-view="analytics">
+      <div class="seg-bar glass" role="tablist" aria-label="Analytics sections">
+        <button class="seg is-active" data-tab="perf" role="tab">Performance</button>
+        <button class="seg" data-tab="strat" role="tab">Strategies</button>
+        <button class="seg" data-tab="pairs" role="tab">Pairs</button>
+        <button class="seg" data-tab="risk" role="tab">Risk</button>
+        <button class="seg" data-tab="chart" role="tab">Chart</button>
+        <button class="seg" data-tab="time" role="tab">Timeline</button>
+      </div>
+
+      <div class="tab-pane is-active" data-pane="perf">
+        <div class="stat-grid wide">
+          <div class="stat-card"><span class="stat-k">Expectancy</span><span class="stat-v" id="aExp">—</span><span class="stat-f" id="aExpSub">per trade</span></div>
+          <div class="stat-card"><span class="stat-k">Avg win</span><span class="stat-v" id="aAvgW">—</span><span class="stat-f" id="aAvgWSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Avg loss</span><span class="stat-v" id="aAvgL">—</span><span class="stat-f" id="aAvgLSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Best trade</span><span class="stat-v" id="aBest">—</span><span class="stat-f" id="aBestSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Worst trade</span><span class="stat-v" id="aWorst">—</span><span class="stat-f" id="aWorstSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Payoff ratio</span><span class="stat-v" id="aPayoff">—</span><span class="stat-f" id="aPayoffSub">avg win ÷ avg loss</span></div>
+        </div>
+        <div class="glass panel">
+          <header class="panel-head"><h2>Cumulative P&amp;L by trade</h2><span class="panel-note" id="perfNote"></span></header>
+          <div class="chart-box"><canvas id="cumChart"></canvas></div>
+        </div>
+        <div class="split">
+          <section class="glass panel">
+            <header class="panel-head"><h2>Outcome split</h2></header>
+            <div class="chart-box sm"><canvas id="aResultChart"></canvas></div>
+          </section>
+          <section class="glass panel">
+            <header class="panel-head"><h2>Streaks</h2></header>
+            <div class="kv-grid" id="streakGrid"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="strat">
+        <div class="glass panel">
+          <header class="panel-head"><h2>Net P&amp;L by strategy</h2></header>
+          <div class="chart-box"><canvas id="stratBar"></canvas></div>
+        </div>
+        <div class="glass panel">
+          <header class="panel-head"><h2>Breakdown</h2></header>
+          <div class="table-wrap bare"><table class="tbl compact" id="stratTbl"></table></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="pairs">
+        <div class="glass panel">
+          <header class="panel-head"><h2>Win rate by pair</h2></header>
+          <div class="chart-box"><canvas id="pairBar"></canvas></div>
+        </div>
+        <div class="glass panel">
+          <header class="panel-head"><h2>Breakdown</h2></header>
+          <div class="table-wrap bare"><table class="tbl compact" id="pairTbl"></table></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="risk">
+        <div class="stat-grid wide">
+          <div class="stat-card"><span class="stat-k">Avg risk / trade</span><span class="stat-v" id="rAvg">—</span><span class="stat-f" id="rAvgSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Largest risk</span><span class="stat-v" id="rMax">—</span><span class="stat-f" id="rMaxSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Total risk taken</span><span class="stat-v" id="rTot">—</span><span class="stat-f" id="rTotSub">&nbsp;</span></div>
+          <div class="stat-card"><span class="stat-k">Realized R</span><span class="stat-v" id="rReal">—</span><span class="stat-f" id="rRealSub">&nbsp;</span></div>
+        </div>
+        <div class="split">
+          <section class="glass panel">
+            <header class="panel-head"><h2>Risk per trade</h2><span class="panel-note">vs realized P&amp;L</span></header>
+            <div class="chart-box"><canvas id="riskScatter"></canvas></div>
+          </section>
+          <section class="glass panel">
+            <header class="panel-head"><h2>R-multiple distribution</h2></header>
+            <div class="chart-box"><canvas id="rDist"></canvas></div>
+          </section>
+        </div>
+        <div class="glass panel">
+          <header class="panel-head"><h2>Risk consistency</h2><span class="panel-note" id="riskNote"></span></header>
+          <div class="kv-grid" id="riskGrid"></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" data-pane="chart">
+        <section class="glass panel">
+          <header class="panel-head">
+            <h2>Price &amp; your entries</h2>
+            <div class="chart-ctrls">
+              <div class="seg-mini" id="chartFrame">
+                <button data-frame="1h">1H</button><button data-frame="4h">4H</button>
+                <button data-frame="1d">1D</button><button data-frame="1w">1W</button>
+              </div>
+            <div class="chart-sym">
+              <div class="picker picker-sm" id="chartPicker">
+                <input class="input picker-input" id="chartSymbol" placeholder="EURUSD"
+                       autocomplete="off" autocapitalize="characters" spellcheck="false"
+                       role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="chartList" />
+                <button type="button" class="picker-caret" aria-label="Show instruments" tabindex="-1"><svg class="ic"><use href="#i-chev-d"/></svg></button>
+                <button type="button" class="picker-clear icon-btn xs" aria-label="Clear" tabindex="-1" hidden><svg class="ic"><use href="#i-close"/></svg></button>
+                <div class="picker-menu">
+                  <div class="picker-list" id="chartList" role="listbox" aria-label="Instruments"></div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </header>
+          <div class="candle-box"><canvas id="candleChart"></canvas></div>
+          <div class="candle-legend" id="candleLegend"></div>
+        </section>
+        <section class="glass panel">
+          <header class="panel-head"><h2>Entries on this pair</h2><span class="panel-note" id="chartNote"></span></header>
+          <div id="chartTrades" class="trade-list"></div>
+        </section>
+        <p class="fine-print" id="candleSourceNote"></p>
+      </div>
+
+      <div class="tab-pane" data-pane="time">
+        <div class="glass panel">
+          <header class="panel-head">
+            <h2>Monthly P&amp;L</h2>
+            <div class="seg-mini" id="timeGran">
+              <button class="is-active" data-gran="month">Monthly</button>
+              <button data-gran="week">Weekly</button>
+              <button data-gran="dow">Day of week</button>
+              <button data-gran="hour">Hour</button>
+            </div>
+          </header>
+          <div class="chart-box"><canvas id="timeChart"></canvas></div>
+        </div>
+        <div class="glass panel">
+          <header class="panel-head"><h2>Table</h2></header>
+          <div class="table-wrap bare"><table class="tbl compact" id="timeTbl"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SETTINGS ══════════ -->
+    <section class="view" data-view="settings">
+      <div class="settings-col">
+
+        <section class="glass panel">
+          <header class="panel-head"><h2>Account</h2></header>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Starting balance</b><span>Baseline for your equity curve and return %.</span></div>
+            <div class="setting-ctl ctl-money"><span id="curSymA">$</span><input id="setBalance" class="input bare" type="number" inputmode="decimal" step="0.01" min="0" /></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Currency</b><span>Symbol used across the whole app.</span></div>
+            <div class="setting-ctl"><select id="setCurrency" class="input sm-select">
+              <option value="$">$ — US Dollar</option><option value="€">€ — Euro</option><option value="£">£ — Pound</option>
+              <option value="¥">¥ — Yen</option><option value="₹">₹ — Rupee</option><option value="₩">₩ — Won</option>
+              <option value="R$">R$ — Real</option><option value="A$">A$ — Aus</option><option value="C$">C$ — CAD</option><option value="CHF">CHF — Franc</option>
+            </select></div>
+          </div>
+        </section>
+
+        <section class="glass panel">
+          <header class="panel-head"><h2>Appearance</h2></header>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Theme</b><span>Dark is the default. Light is the full Frosted Ink palette.</span></div>
+            <div class="setting-ctl"><div class="seg-mini" id="themeSeg">
+              <button data-theme-val="dark">Dark</button><button data-theme-val="light">Light</button>
+            </div></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Semantic P&amp;L colours</b><span>Off keeps the journal strictly monochrome — solid ink for wins, hollow for losses.</span></div>
+            <div class="setting-ctl"><label class="switch"><input type="checkbox" id="setColorPnl" /><i></i></label></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Reduce motion</b><span>Minimise animation for comfort and battery.</span></div>
+            <div class="setting-ctl"><label class="switch"><input type="checkbox" id="setMotion" /><i></i></label></div>
+          </div>
+        </section>
+
+        <section class="glass panel">
+          <header class="panel-head"><h2>Data</h2></header>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Export JSON</b><span>Full backup — trades, settings, screenshots.</span></div>
+            <div class="setting-ctl"><button class="btn-ghost sm" data-action="export-json"><svg class="ic"><use href="#i-dl"/></svg><span>Export</span></button></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Export CSV</b><span>One row per trade, spreadsheet-ready.</span></div>
+            <div class="setting-ctl"><button class="btn-ghost sm" data-action="export-csv"><svg class="ic"><use href="#i-doc"/></svg><span>CSV</span></button></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Import</b><span>Restore from a VibeJournal JSON backup. Replaces current data.</span></div>
+            <div class="setting-ctl"><button class="btn-ghost sm" data-action="import"><svg class="ic"><use href="#i-ul"/></svg><span>Import</span></button><input type="file" id="importFile" accept="application/json,.json" hidden /></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Load sample data</b><span>40 realistic trades to explore the app. Adds to your journal.</span></div>
+            <div class="setting-ctl"><button class="btn-ghost sm" data-action="load-sample">Load</button></div>
+          </div>
+          <div class="setting-row danger">
+            <div class="setting-txt"><b>Clear all data</b><span>Erase every trade, screenshot and setting. Cannot be undone.</span></div>
+            <div class="setting-ctl"><button class="btn-danger sm" data-action="clear-all">Clear…</button></div>
+          </div>
+        </section>
+
+        <section class="glass panel">
+          <header class="panel-head"><h2>About</h2></header>
+          <div class="about">
+            <div class="about-mark"><svg class="ic"><use href="#i-bolt"/></svg></div>
+            <div>
+              <b>VibeJournal <span id="appVer">1.0.0</span></b>
+              <p>Offline-first trading journal. No account, no server, no tracking. Everything you log is stored in this browser's IndexedDB and never transmitted anywhere.</p>
+              <div class="about-badges">
+                <span class="tag">PWA</span><span class="tag">Offline</span><span class="tag">Local data</span><span class="tag">No telemetry</span>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Install app</b><span id="installHint">Add VibeJournal to your home screen for a native feel.</span></div>
+            <div class="setting-ctl"><button class="btn-solid sm" data-action="install" id="installBtn" hidden><svg class="ic"><use href="#i-dl"/></svg><span>Install</span></button></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-txt"><b>Storage</b><span id="storageAbout">—</span></div>
+            <div class="setting-ctl"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- bottom nav (mobile) -->
+<nav class="tabbar" aria-label="Primary">
+  <button class="tab is-active" data-nav="dashboard"><svg class="ic"><use href="#i-dash"/></svg><span>Home</span></button>
+  <button class="tab" data-nav="journal"><svg class="ic"><use href="#i-journal"/></svg><span>Journal</span></button>
+  <button class="tab tab-fab" data-action="new-trade" aria-label="Log a trade"><span class="fab"><svg class="ic"><use href="#i-plus"/></svg></span></button>
+  <button class="tab" data-nav="analytics"><svg class="ic"><use href="#i-chart"/></svg><span>Stats</span></button>
+  <button class="tab" data-nav="settings"><svg class="ic"><use href="#i-gear"/></svg><span>Settings</span></button>
+</nav>
+
+<!-- ══════════ trade sheet (form) ══════════ -->
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="tradeSheet" hidden role="dialog" aria-modal="true" aria-labelledby="tsTitle">
+  <div class="sheet-grab"></div>
+  <header class="sheet-head">
+    <button class="icon-btn" data-close aria-label="Close"><svg class="ic"><use href="#i-close"/></svg></button>
+    <h2 id="tsTitle">New trade</h2>
+    <button class="btn-solid sm" id="saveTrade" type="button">Save</button>
+  </header>
+
+  <form class="sheet-body" id="tradeForm" novalidate>
+    <div class="grid2">
+      <div class="fg">
+        <label class="lbl" for="f-dt">Date &amp; time</label>
+        <input class="input" id="f-dt" type="datetime-local" required />
+      </div>
+      <div class="fg">
+        <label class="lbl" for="f-symbol">Pair / symbol</label>
+        <div class="picker" id="symbolPicker">
+          <input class="input picker-input" id="f-symbol" placeholder="Search pairs, metals, indices…"
+                 autocomplete="off" autocapitalize="characters" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="symbolList" required />
+          <button type="button" class="picker-caret" aria-label="Show instruments" tabindex="-1"><svg class="ic"><use href="#i-chev-d"/></svg></button>
+          <button type="button" class="picker-clear icon-btn xs" aria-label="Clear" tabindex="-1" hidden><svg class="ic"><use href="#i-close"/></svg></button>
+          <div class="picker-menu" id="symbolPickerMenu">
+            <div class="picker-list" id="symbolList" role="listbox" aria-label="Instruments"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fg">
+      <span class="lbl">Direction</span>
+      <div class="segmented" id="f-dir">
+        <button type="button" class="seg-btn is-active" data-val="buy">Buy</button>
+        <button type="button" class="seg-btn" data-val="sell">Sell</button>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="fg">
+        <label class="lbl" for="f-entry">Entry</label>
+        <input class="input mono" id="f-entry" type="number" inputmode="decimal" step="any" placeholder="1.08500" required />
+      </div>
+      <div class="fg">
+        <label class="lbl" for="f-sl">Stop loss</label>
+        <input class="input mono" id="f-sl" type="number" inputmode="decimal" step="any" placeholder="1.08200" />
+      </div>
+      <div class="fg">
+        <label class="lbl" for="f-tp">Take profit</label>
+        <input class="input mono" id="f-tp" type="number" inputmode="decimal" step="any" placeholder="1.09100" />
+      </div>
+    </div>
+
+    <div class="ratio-strip" id="ratioStrip">
+      <div><span>Risk : Reward</span><b id="calcRR">—</b></div>
+      <div><span>Risk distance</span><b id="calcPips">—</b></div>
+      <div><span>Reward distance</span><b id="calcPips2">—</b></div>
+    </div>
+
+    <div class="grid2">
+      <div class="fg">
+        <label class="lbl" for="f-lots">Lot size</label>
+        <input class="input mono" id="f-lots" type="number" inputmode="decimal" step="any" min="0" placeholder="0.50" />
+      </div>
+      <div class="fg">
+        <span class="lbl">Risk input</span>
+        <div class="segmented sm" id="f-riskmode">
+          <button type="button" class="seg-btn is-active" data-val="amount">Amount</button>
+          <button type="button" class="seg-btn" data-val="percent">Percent</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="lbl" for="f-risk" id="f-risk-label">Risk amount</label>
+      <div class="input-affix">
+        <span id="riskPrefix">$</span>
+        <input class="input mono bare" id="f-risk" type="number" inputmode="decimal" step="any" min="0" placeholder="250" />
+      </div>
+      <span class="help" id="riskHelp">Money you stand to lose if stopped out.</span>
+    </div>
+
+    <div class="grid2">
+      <div class="fg">
+        <span class="lbl">Result</span>
+        <div class="segmented" id="f-result">
+          <button type="button" class="seg-btn is-active" data-val="open">Open</button>
+          <button type="button" class="seg-btn" data-val="win">Win</button>
+          <button type="button" class="seg-btn" data-val="loss">Loss</button>
+          <button type="button" class="seg-btn" data-val="be">Breakeven</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl" for="f-pnl">Profit / loss</label>
+        <div class="input-affix">
+          <span id="pnlPrefix">$</span>
+          <input class="input mono bare" id="f-pnl" type="number" inputmode="decimal" step="any" placeholder="0.00" />
+        </div>
+        <span class="help" id="pnlHelp">Leave blank while the trade is open.</span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fg">
+        <label class="lbl" for="f-strategy">Strategy</label>
+        <input class="input" id="f-strategy" list="stratList" placeholder="Liquidity Sweep" autocomplete="off" />
+        <datalist id="stratList"></datalist>
+      </div>
+      <div class="fg">
+        <label class="lbl" for="f-tags">Tags</label>
+        <input class="input" id="f-tags" placeholder="asia, fvg, a+ setup" autocomplete="off" />
+        <span class="help">Comma separated.</span>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="lbl" for="f-notes">Notes</label>
+      <textarea class="input" id="f-notes" rows="3" placeholder="What was your thesis? How did you manage it? What would you change?"></textarea>
+    </div>
+
+    <div class="fg">
+      <span class="lbl">Screenshot</span>
+      <div class="shot-row" id="shotRow">
+        <label class="shot-drop" id="shotDrop">
+          <input type="file" id="shotInput" accept="image/*" hidden />
+          <svg class="ic"><use href="#i-image"/></svg>
+          <span id="shotLabel">Add chart screenshot</span>
+        </label>
+        <div class="shot-preview" id="shotPreview" hidden>
+          <img id="shotImg" alt="Trade screenshot" />
+          <button type="button" class="icon-btn xs" id="shotRemove" aria-label="Remove screenshot"><svg class="ic"><use href="#i-close"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-foot-actions">
+      <button type="button" class="btn-ghost danger" id="deleteTrade" hidden><svg class="ic"><use href="#i-trash"/></svg><span>Delete</span></button>
+    </div>
+  </form>
+</section>
+
+<!-- ══════════ trade detail ══════════ -->
+<section class="sheet detail" id="detailSheet" hidden role="dialog" aria-modal="true" aria-labelledby="dtTitle">
+  <div class="sheet-grab"></div>
+  <header class="sheet-head">
+    <button class="icon-btn" data-close aria-label="Close"><svg class="ic"><use href="#i-close"/></svg></button>
+    <h2 id="dtTitle">Trade</h2>
+    <button class="icon-btn" id="detailEdit" aria-label="Edit trade"><svg class="ic"><use href="#i-edit"/></svg></button>
+  </header>
+  <div class="sheet-body" id="detailBody"></div>
+</section>
+
+<!-- ══════════ confirm ══════════ -->
+<section class="modal" id="confirmModal" hidden role="alertdialog" aria-modal="true" aria-labelledby="cfTitle">
+  <div class="modal-card glass">
+    <span class="modal-ic" id="cfIcon"><svg class="ic"><use href="#i-alert"/></svg></span>
+    <h3 id="cfTitle">Are you sure?</h3>
+    <p id="cfBody">This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cfCancel">Cancel</button>
+      <button class="btn-solid" id="cfOk">Confirm</button>
+    </div>
+  </div>
+</section>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="edge-hint" id="edgeHint" hidden>Swipe from left edge to go back</div>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/db.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/instruments.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script src="js/candles.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

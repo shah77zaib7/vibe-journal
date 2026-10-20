@@ -1,0 +1,11 @@
+# dev artefacts
+.shots/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# nothing in this app is secret, but keep local overrides out of the repo
+*.local
+.env
+.env.*

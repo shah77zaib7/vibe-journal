@@ -1,0 +1,43 @@
+{
+  "name": "VibeJournal — Trading Journal",
+  "short_name": "VibeJournal",
+  "description": "A private, offline-first trading journal. Track trades, risk and performance. Your data never leaves your device.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0B0B0D",
+  "theme_color": "#0B0B0D",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log a trade",
+      "short_name": "New trade",
+      "description": "Add a new trade to your journal",
+      "url": "./index.html?action=new",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Open journal",
+      "short_name": "Journal",
+      "description": "Browse and filter all logged trades",
+      "url": "./index.html#journal"
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Stats",
+      "description": "Performance, strategy and risk analysis",
+      "url": "./index.html#analytics"
+    }
+  ]
+}
