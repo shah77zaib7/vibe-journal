@@ -1,3 +1,14 @@
 * text=auto eol=lf
 *.png binary
 *.webmanifest text
+
+# binaries — never let line-ending normalisation touch these
+*.apk binary
+*.aab binary
+*.keystore binary
+*.jks binary
+*.jar binary
+*.so binary
+*.png binary
+*.webp binary
+*.ico binary
