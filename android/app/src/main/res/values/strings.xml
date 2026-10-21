@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VibeJournal</string>
+    <string name="title_activity_main">VibeJournal</string>
+    <string name="package_name">com.shah77zaib7.vibejournal</string>
+    <string name="custom_url_scheme">com.shah77zaib7.vibejournal</string>
+</resources>

@@ -231,5 +231,10 @@
 
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
 
-  global.VJPicker = { init: init, open: openOne, close: function () { if (openEl && openEl.__close) openEl.__close(); } };
+  global.VJPicker = {
+    init: init,
+    open: openOne,
+    close: function () { if (openEl && openEl.__close) openEl.__close(); },
+    isOpen: function () { return !!openEl; }
+  };
 })(window);

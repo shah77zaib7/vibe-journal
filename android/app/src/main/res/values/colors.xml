@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#1C1C1E</color>
+    <color name="colorPrimaryDark">#0B0B0D</color>
+    <color name="colorAccent">#1C1C1E</color>
+    <color name="vibeInk">#0B0B0D</color>
+    <color name="vibeSurface">#15151A</color>
+</resources>

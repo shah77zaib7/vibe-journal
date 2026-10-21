@@ -551,7 +551,10 @@
       if (fill) fill.style.width = Math.max(pctUsed, count ? 2 : 0) + '%';
       var txt = VJUI.bytes(e.usage) + ' used · ' + count + ' trade' + (count === 1 ? '' : 's');
       if ($('#storageText')) $('#storageText').textContent = txt;
-      if ($('#storageAbout')) $('#storageAbout').textContent = txt + (e.quota ? ' of ' + VJUI.bytes(e.quota) + ' available to this site' : '');
+      if ($('#storageAbout')) {
+      var backend = VJDB.backend && VJDB.backend() === 'sqlite' ? ' · native SQLite' : '';
+      $('#storageAbout').textContent = txt + backend + (e.quota ? ' of ' + VJUI.bytes(e.quota) + ' available to this site' : '');
+    }
     });
   }
 
@@ -722,6 +725,7 @@
       S.trades.sort(function (a, b) { return b.dt - a.dt; });
       renderAll();
       closeSheet();
+      if (window.VJNative) window.VJNative.haptic('success');
       VJUI.toast(S.editingId ? 'Trade updated' : 'Trade logged', 'i-check');
     };
 
@@ -1376,11 +1380,13 @@
     VJUI.on($('#themeSeg'), 'click', 'button', function () {
       S.settings.theme = this.dataset.themeVal;
       applyTheme(); saveSettings(); syncSettingsUI();
+      if (window.VJNative) window.VJNative.setStatusBar(S.settings.theme);
       setTimeout(function () { C.invalidate(); renderAll(); }, 20);
     });
     $('#themeBtn').addEventListener('click', function () {
       S.settings.theme = S.settings.theme === 'dark' ? 'light' : 'dark';
       applyTheme(); saveSettings(); syncSettingsUI();
+      if (window.VJNative) window.VJNative.setStatusBar(S.settings.theme);
       setTimeout(function () { C.invalidate(); renderAll(); }, 20);
     });
     $('#setColorPnl').addEventListener('change', function () {
@@ -1448,6 +1454,33 @@
     });
   }
 
+  /* ══════════════════════ native shell ══════════════════════ */
+
+  function initNative() {
+    if (!window.VJNative || !window.VJNative.isNative) return;
+
+    // status bar follows the theme
+    window.VJNative.setStatusBar(S.settings.theme);
+
+    // let the app draw under the status bar, then reserve room for it
+    document.documentElement.classList.add('is-native');
+    window.VJNative.statusBarHeight().then(function (h) {
+      if (h) document.documentElement.style.setProperty('--native-status-h', h + 'px');
+    });
+
+    // hide the splash once the first paint is done
+    setTimeout(function () { window.VJNative.hideSplash(); }, 120);
+
+    // Android hardware back: close a sheet first, then step back a view
+    var order = ['dashboard', 'journal', 'analytics', 'settings'];
+    window.VJNative.onBack(function () {
+      if (VJPicker && VJPicker.close && VJPicker.isOpen && VJPicker.isOpen()) return true;
+      if (openSheets.length) { closeSheet(); return true; }
+      if (S.view !== 'dashboard') { go(order[order.indexOf(S.view) - 1]); return true; }
+      return false;
+    });
+  }
+
   function doInstall() {
     if (!S.deferredInstall) {
       VJUI.toast('Use your browser menu → “Install app” or “Add to Home Screen”');
@@ -1465,6 +1498,9 @@
   function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     if (location.protocol === 'file:') return;
+    // in the native app the assets ship inside the APK — a caching service
+    // worker only serves to make updates confusing
+    if (window.VJNative && window.VJNative.isNative) return;
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function () { /* offline caching unavailable */ });
     });
@@ -1496,6 +1532,7 @@
 
     initEvents();
     initGestures();
+    initNative();
     VJPicker.init();
     window.__vjRecentSymbols = recentSymbols();
     registerSW();

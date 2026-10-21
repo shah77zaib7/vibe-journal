@@ -1,0 +1,45 @@
+{
+  "name": "vibejournal",
+  "version": "1.1.0",
+  "description": "A private, offline-first trading journal PWA. No backend, no account, no telemetry — every trade stays on your device.",
+  "private": true,
+  "license": "MIT",
+  "author": "Shahzaib mudasir",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shah77zaib7/vibe-journal.git"
+  },
+  "homepage": "https://shah77zaib7.github.io/vibe-journal/",
+  "keywords": ["trading", "journal", "pwa", "offline", "finance"],
+  "scripts": {
+    "start": "node tools/serve.js",
+    "verify": "node tools/verify.js",
+    "test": "node tools/e2e.js && node tools/e2e2.js && node tools/e2e3.js",
+    "test:core": "node tools/e2e.js",
+    "test:data": "node tools/e2e2.js",
+    "test:features": "node tools/e2e3.js",
+    "perf": "node tools/perf-mobile.js",
+    "shots": "node tools/shots.js",
+    "icons": "python3 tools/make_icons.py",
+    "stage": "node tools/stage-web.js",
+    "android:sync": "node tools/stage-web.js && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:build": "node tools/stage-web.js && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "android:release": "node tools/stage-web.js && npx cap sync android && cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor-community/sqlite": "^8.1.1",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "appId": "com.shah77zaib7.vibejournal",
+  "appName": "VibeJournal",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "loggingBehavior": "none",
+  "android": {
+    "backgroundColor": "#0B0B0D",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 700,
+      "launchAutoHide": false,
+      "backgroundColor": "#0B0B0D",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": true,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#00000000"
+    },
+    "CapacitorSQLite": {
+      "sqliteFolder": "vibejournal"
+    }
+  }
+}

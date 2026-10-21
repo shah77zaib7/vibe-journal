@@ -54,6 +54,39 @@ launches fullscreen, works offline, and keeps your data between sessions.
 > Service workers require HTTPS (or `localhost`). If you deploy to GitHub
 > Pages, enable **Settings → Pages → Deploy from branch `main` / (root)**.
 
+## Android app
+
+The same code also builds as a native Android app with
+[Capacitor](https://capacitorjs.com/) — same UI, same data model, but with
+native storage, haptics, the Android back button and no service worker.
+
+```bash
+npm install
+bash tools/android-toolchain.sh      # JDK 21 + Android SDK (once)
+bash tools/make-keystore.sh          # your signing key (once — BACK IT UP)
+bash tools/build-release.sh          # → android/app/build/outputs/apk/release/
+```
+
+Sideload the APK: copy it to the phone, allow **Install unknown apps** for
+your file manager, tap it. To rebuild after a change, run
+`bash tools/build-apk.sh` (debug build) or `bash tools/build-release.sh`.
+
+**Native differences from the PWA**
+
+| | PWA | Android |
+|---|---|---|
+| Storage | IndexedDB | SQLite in the app's private data dir |
+| Service worker | yes | no — assets ship inside the APK |
+| Back button | browser history | closes the sheet, then steps back a view |
+| Data | browser storage | survives cache eviction; uninstalling removes it |
+
+Your journal moves between the two with **Settings → Export JSON → Import**.
+
+> **The keystore is the key to every future update.** If you lose it, Android
+> will refuse to install a newer build over the existing app, and you'll have
+> to uninstall first — which deletes the app's data. Generate it on your own
+> machine (`tools/make-keystore.sh`) and back it up.
+
 ## Design
 
 **"Frosted Ink"** — an iOS-style glass surface system: translucent panels over

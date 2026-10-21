@@ -220,7 +220,7 @@
     return Promise.resolve(false);
   }
 
-  global.VJDB = {
+  global.VJDBWeb = {
     open: open,
     allTrades: allTrades,
     getTrade: getTrade,
@@ -239,5 +239,61 @@
     clearAll: clearAll,
     estimate: estimate,
     requestPersistent: requestPersistent
+  };
+
+
+  /* ==========================================================================
+     Facade — pick the backend.
+     In the browser that is IndexedDB. Inside the Android app it is SQLite
+     (js/native-store.js), which lives in the app's private data directory and
+     therefore cannot be evicted by the OS the way WebView storage can.
+     Every method below keeps the exact same contract as before.
+     ========================================================================== */
+
+  function nativeAvailable() {
+    var ns = global.VJNativeStore;
+    if (!ns) return false;
+    // `available` may be a function or a plain flag — handle both
+    return typeof ns.available === 'function' ? !!ns.available() : !!ns.available;
+  }
+
+  function pick() {
+    return nativeAvailable() ? global.VJNativeStore : global.VJDBWeb;
+  }
+
+  function proxy(name) {
+    return function () {
+      var args = arguments;
+      return pick()[name].apply(pick(), args);
+    };
+  }
+
+  global.VJDB = {
+    isNative: nativeAvailable,
+    backend: function () { return nativeAvailable() ? 'sqlite' : 'indexeddb'; },
+    open: proxy('open'),
+    allTrades: proxy('allTrades'),
+    getTrade: proxy('getTrade'),
+    putTrade: proxy('putTrade'),
+    deleteTrade: proxy('deleteTrade'),
+    bulkPutTrades: proxy('bulkPutTrades'),
+    bulkDeleteTrades: proxy('bulkDeleteTrades'),
+    tradeCount: proxy('tradeCount'),
+    putShot: proxy('putShot'),
+    getShot: proxy('getShot'),
+    deleteShot: proxy('deleteShot'),
+    allShots: proxy('allShots'),
+    getMeta: proxy('getMeta'),
+    setMeta: proxy('setMeta'),
+    allMeta: proxy('allMeta'),
+    clearAll: proxy('clearAll'),
+    estimate: function () {
+      if (nativeAvailable()) return Promise.resolve({ usage: 0, quota: 0 });
+      return global.VJDBWeb.estimate();
+    },
+    requestPersistent: function () {
+      if (nativeAvailable()) return Promise.resolve(true);
+      return global.VJDBWeb.requestPersistent();
+    }
   };
 })(window);

@@ -9,3 +9,20 @@ Thumbs.db
 *.local
 .env
 .env.*
+
+# android build
+.toolchain/
+www/
+node_modules/
+android/build/
+android/app/build/
+android/.gradle/
+android/app/src/main/assets/public/
+android/local.properties
+android/captures/
+android/.idea/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+*.iml
+*.keystore
+*.jks

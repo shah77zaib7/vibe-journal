@@ -1,7 +1,7 @@
 /* static integrity sweep for the shipped app */
 'use strict';
 const fs = require('fs');
-const P = require('path').resolve(__dirname, '..') + '/';
+const P = 'vibejournal/';
 const html = fs.readFileSync(P+'index.html','utf8');
 const css  = fs.readFileSync(P+'css/style.css','utf8');
 const js   = ['app','ui','db','stats','instruments','picker','candles'].map(f => fs.readFileSync(P+`js/${f}.js`,'utf8')).join('\n');

@@ -189,6 +189,11 @@ svg:not([class]) { width: 1.15em; height: 1.15em; }
 *::-webkit-scrollbar-thumb { background: var(--hair); border-radius: 99px; }
 *::-webkit-scrollbar-track { background: transparent; }
 
+/* native shell: the app draws under the status bar, so reserve room for it */
+.is-native .appbar { padding-top: calc(var(--safe-t) + var(--native-status-h, 0px) + 8px); }
+.is-native .tabbar { padding-bottom: calc(var(--safe-b) + 4px); }
+.is-native .sheet { padding-top: 4px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
