@@ -16,7 +16,7 @@
   'use strict';
 
   var DEFAULTS = {
-    supabaseUrl: 'https://jfmsetgnkvlnfqatsgyd.supabase.co/rest/v1/',
+    supabaseUrl: 'https://jfmsetgnkvlnfqatsgyd.supabase.co',
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmbXNldGdua3ZsbmZxYXRzZ3lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5ODQ0ODEsImV4cCI6MjEwODU2MDQ4MX0.tHzWcRdtnFbnkFJkfPuK3tbJVZngM1YuY7eZWmBeOys',
 
     // Where Google sends the browser back to. Leave blank to use the
