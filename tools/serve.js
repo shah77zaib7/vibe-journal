@@ -4,7 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = path.resolve(__dirname, '..', 'vibejournal');
+const ROOT = path.resolve(__dirname, '..');
 const PORT = process.env.PORT || 8099;
 
 const MIME = {

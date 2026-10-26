@@ -66,6 +66,19 @@ until you sign in.
 
 ### Setup (about 10 minutes)
 
+> **New to this? Follow the click-by-click guide →
+> [`docs/SETUP-CLOUD.md`](docs/SETUP-CLOUD.md)** — it goes screen by screen
+> through Google Cloud, Supabase and the app, with the common traps called
+> out. Or let the helper do the fiddly part:
+>
+> ```bash
+> npm run setup:cloud
+> ```
+>
+> It decodes your key, **refuses a `service_role` key**, checks your project
+> actually answers, and writes `js/config.js` for you.
+
+
 **1. Create a Supabase project** — [supabase.com](https://supabase.com) → New project.
 
 **2. Run the schema.** SQL Editor → New query → paste the whole of

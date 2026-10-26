@@ -1,10 +1,13 @@
 /* static integrity sweep for the shipped app */
 'use strict';
 const fs = require('fs');
-const P = 'vibejournal/';
+const path = require('path');
+// resolve from this file, not the cwd — the repo is runnable from anywhere
+const P = path.resolve(__dirname, '..') + path.sep;
 const html = fs.readFileSync(P+'index.html','utf8');
 const css  = fs.readFileSync(P+'css/style.css','utf8');
-const js   = ['app','ui','db','stats','instruments','picker','candles'].map(f => fs.readFileSync(P+`js/${f}.js`,'utf8')).join('\n');
+const js   = ['app','ui','db','stats','instruments','picker','candles','cloud','cloud-ui','config']
+                .map(f => fs.readFileSync(P+`js/${f}.js`,'utf8')).join('\n');
 let fail = 0;
 
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));

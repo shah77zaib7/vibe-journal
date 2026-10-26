@@ -1,7 +1,7 @@
 {
   "name": "vibejournal",
   "version": "1.1.0",
-  "description": "A private, offline-first trading journal PWA. No backend, no account, no telemetry — every trade stays on your device.",
+  "description": "A private, offline-first trading journal PWA. No backend, no account, no telemetry \u2014 every trade stays on your device.",
   "private": true,
   "license": "MIT",
   "author": "Shahzaib mudasir",
@@ -31,7 +31,9 @@
     "android:sync": "node tools/stage-web.js && npx cap sync android",
     "android:open": "npx cap open android",
     "android:build": "node tools/stage-web.js && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "android:release": "node tools/stage-web.js && npx cap sync android && cd android && ./gradlew assembleRelease"
+    "android:release": "node tools/stage-web.js && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "setup:cloud": "node tools/setup-cloud.js",
+    "test:cloud": "node tools/e2e4.js"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",

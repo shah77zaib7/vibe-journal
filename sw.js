@@ -4,7 +4,7 @@
    ========================================================================== */
 'use strict';
 
-var VERSION = 'v1.1.0';
+var VERSION = 'v1.2.0';
 var CACHE = 'vibejournal-' + VERSION;
 
 var SHELL = [
@@ -12,11 +12,16 @@ var SHELL = [
   './index.html',
   './manifest.webmanifest',
   './css/style.css',
+  './js/config.js',
   './js/db.js',
   './js/stats.js',
   './js/instruments.js',
   './js/ui.js',
   './js/picker.js',
+  './js/native.js',
+  './js/native-store.js',
+  './js/cloud.js',
+  './js/cloud-ui.js',
   './js/candles.js',
   './js/app.js',
   './vendor/chart.umd.js',
@@ -27,6 +32,11 @@ var SHELL = [
   './icons/favicon.svg',
   './icons/favicon-32.png'
 ];
+
+// NOTE: vendor/supabase.js is deliberately NOT precached. It is ~223 KB and
+// only needed when the user actually signs in — precaching it would push
+// that download onto every offline, local-only user. It is fetched on
+// demand instead and cached at runtime by the fetch handler below.
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
