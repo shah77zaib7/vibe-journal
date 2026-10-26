@@ -966,6 +966,93 @@ tr:hover .t-row-act { opacity: 1; }
   .view[data-view="analytics"] .panel-head { flex-wrap: wrap; }
 }
 
+/* cloud account ----------------------------------------------------------- */
+.side-cloud {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px; border-radius: var(--r-chip); text-align: left;
+  background: var(--solid-soft); border: 1px solid transparent;
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+.side-cloud:active { transform: scale(.98); }
+.side-cloud:hover { border-color: var(--stroke-2); }
+.side-cloud-ic {
+  display: grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border-radius: 10px; background: var(--glass-2); color: var(--ink-2);
+}
+.side-cloud-ic .ic { width: 17px; height: 17px; }
+.side-cloud-t { min-width: 0; }
+.side-cloud-t b { display: block; font-size: 13px; font-weight: 600; }
+.side-cloud-t span {
+  display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.side-cloud.is-on .side-cloud-ic { background: var(--solid); color: var(--on-solid); }
+
+.cloud-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 2px 4px; }
+.cloud-ic {
+  display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 14px;
+  border-radius: 18px; background: var(--solid-soft); color: var(--ink);
+}
+.cloud-ic .ic { width: 25px; height: 25px; }
+.cloud-empty h3 { font-size: 17px; }
+.cloud-empty > p { font-size: 13.5px; color: var(--ink-3); margin-top: 7px; line-height: 1.45; max-width: 340px; }
+.cloud-empty code {
+  font-family: var(--f-mono); font-size: 12px; padding: 1px 5px; border-radius: 5px;
+  background: var(--solid-soft); color: var(--ink-2);
+}
+.cloud-steps {
+  margin: 18px 0 4px; padding: 14px 16px 14px 34px; text-align: left;
+  border-radius: var(--r-chip); background: var(--field);
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.6;
+}
+.cloud-steps li { margin: 3px 0; }
+.cloud-steps b { color: var(--ink); font-weight: 600; }
+
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; height: 48px; margin-top: 20px; padding: 0 18px;
+  border-radius: var(--r-btn); background: #fff; color: #1c1c1e;
+  font-size: 15px; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .16), var(--sh-inset);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast);
+}
+.btn-google .ic { width: 19px; height: 19px; }
+.btn-google:active { transform: translateY(1.5px) scale(.99); box-shadow: var(--sh-press); }
+.btn-google:disabled { opacity: .6; }
+.btn-google.is-loading { pointer-events: none; }
+
+.cloud-user { display: flex; align-items: center; gap: 13px; padding: 6px 2px 16px; }
+.cloud-avatar {
+  display: grid; place-items: center; width: 46px; height: 46px; flex: none;
+  border-radius: 15px; background: var(--solid); color: var(--on-solid);
+  font-size: 18px; font-weight: 700;
+}
+.cloud-user b { display: block; font-size: 15.5px; font-weight: 600; }
+.cloud-user span { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 1px; }
+
+.cloud-status {
+  border-radius: var(--r-chip); overflow: hidden; background: var(--field);
+  padding: 2px 13px;
+}
+.cloud-kv {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 0; font-size: 13px; border-top: 1px solid var(--hair);
+}
+.cloud-kv:first-child { border-top: 0; }
+.cloud-kv span { color: var(--ink-3); }
+.cloud-kv b { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+
+.cloud-err {
+  display: flex; align-items: center; gap: 7px; margin-top: 12px;
+  font-size: 12.5px; color: var(--ink-2);
+  padding: 10px 12px; border-radius: var(--r-chip); background: var(--solid-soft);
+}
+.cloud-err .ic { width: 15px; height: 15px; flex: none; color: var(--ink); }
+
+.cloud-actions { display: flex; gap: 8px; margin-top: 16px; }
+.cloud-actions .btn-ghost { flex: 1; }
+.cloud-note { font-size: 11.5px; line-height: 1.5; color: var(--ink-4); margin-top: 14px; }
+
 /* toast ------------------------------------------------------------------- */
 .toasts {
   position: fixed; z-index: 90; left: 50%; transform: translateX(-50%);

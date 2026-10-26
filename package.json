@@ -10,7 +10,13 @@
     "url": "git+https://github.com/shah77zaib7/vibe-journal.git"
   },
   "homepage": "https://shah77zaib7.github.io/vibe-journal/",
-  "keywords": ["trading", "journal", "pwa", "offline", "finance"],
+  "keywords": [
+    "trading",
+    "journal",
+    "pwa",
+    "offline",
+    "finance"
+  ],
   "scripts": {
     "start": "node tools/serve.js",
     "verify": "node tools/verify.js",
@@ -31,13 +37,15 @@
     "@capacitor-community/sqlite": "^8.1.1",
     "@capacitor/android": "^8.5.3",
     "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.2",
-    "@capacitor/status-bar": "^8.0.4"
+    "@capacitor/status-bar": "^8.0.4",
+    "@supabase/supabase-js": "^2.118.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"

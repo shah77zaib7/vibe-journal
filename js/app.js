@@ -110,6 +110,7 @@
     $('#viewSub').textContent = VIEW_META[view].sub();
     try { history.replaceState(null, '', '#' + view); } catch (e) {}
     renderView(view);
+    renderCloudStatus();
     window.scrollTo(0, 0);
   }
 
@@ -541,6 +542,52 @@
   function renderSettings() {
     syncSettingsUI();
     refreshStorage();
+    renderCloudStatus();
+  }
+
+  function renderCloudStatus() {
+    if (!window.VJCloud) return;
+    var st = VJCloud.status();
+    var title = $('#sideCloudTitle'), sub = $('#sideCloudSub');
+    if (title && sub) {
+      if (!st.configured) { title.textContent = 'Cloud backup'; sub.textContent = 'Not set up'; }
+      else if (st.signedIn) {
+        title.textContent = (st.user && st.user.name) || 'Signed in';
+        sub.textContent = st.syncing ? 'Syncing…' :
+          (st.pending ? st.pending + ' pending' : 'Synced ' + (st.lastSyncAt ? VJUI.fRel(st.lastSyncAt) : 'never'));
+      } else { title.textContent = 'Cloud backup'; sub.textContent = 'Not signed in'; }
+      var sc = title.closest('.side-cloud');
+      if (sc) sc.classList.toggle('is-on', !!st.signedIn);
+    }
+    var btn = $('#setCloudBtn'), desc = $('#setCloudDesc'), status = $('#setSyncStatus');
+    if (btn) btn.textContent = !st.configured ? 'Set up' : (st.signedIn ? 'Manage' : 'Sign in');
+    if (desc) {
+      desc.textContent = !st.configured
+        ? 'Add your Supabase keys to js/config.js to enable Google Sign-In and sync.'
+        : (st.signedIn
+          ? 'Signed in as ' + ((st.user && st.user.email) || 'your account') + '. Your journal is mirrored to your Supabase project.'
+          : 'Sign in to back up your journal to your own Supabase project and sync across devices.');
+    }
+    if (status) {
+      status.textContent = !st.configured ? 'Cloud backup is not configured yet.'
+        : (!st.signedIn ? 'Not signed in.'
+          : (st.syncing ? 'Syncing…'
+            : (st.error ? 'Error: ' + st.error
+              : 'Up to date · ' + (st.pending ? st.pending + ' pending' : 'last synced ' + (st.lastSyncAt ? VJUI.fRel(st.lastSyncAt) : 'never')))));
+    }
+  }
+
+  function doSyncNow() {
+    if (!window.VJCloud) return;
+    if (!VJCloud.isConfigured()) { VJUI.toast('Cloud backup is not configured', 'i-alert'); return; }
+    if (!VJCloud.currentUser()) { VJCloudUI.open(); return; }
+    VJUI.toast('Syncing…');
+    VJCloud.syncNow().then(function () {
+      VJUI.toast('Synced', 'i-check');
+      renderAll();
+    }).catch(function (e) {
+      VJUI.toast('Sync failed: ' + e.message, 'i-alert');
+    });
   }
 
   function refreshStorage() {
@@ -719,6 +766,8 @@
     }
 
     var after = function () {
+      // tell the cloud layer this trade changed locally
+      if (window.VJCloud) window.VJCloud.markDirty(t.id);
       S.trades = S.editingId
         ? S.trades.map(function (x) { return x.id === t.id ? t : x; })
         : [t].concat(S.trades);
@@ -760,6 +809,7 @@
     }).then(function (ok) {
       if (!ok) return;
       VJDB.deleteTrade(id).then(function () {
+        if (window.VJCloud) window.VJCloud.markDeleted(id);
         S.trades = S.trades.filter(function (t) { return t.id !== id; });
         closeSheet();
         renderAll();
@@ -1008,6 +1058,10 @@
     }).then(function (ok) {
       if (!ok) return;
       VJDB.clearAll().then(function () {
+        if (window.VJCloud) {
+          window.VJCloud.markDeleted = window.VJCloud.markDeleted || function () {};
+          window.VJCloud.state.pending = 0;
+        }
         S.trades = [];
         S.settings = {
           balance: 10000, currency: '$', theme: 'dark',
@@ -1213,6 +1267,8 @@
       else if (a === 'clear-all') clearEverything();
       else if (a === 'install') doInstall();
       else if (a === 'open-search') { go('journal'); setTimeout(function () { $('#q').focus(); }, 120); }
+      else if (a === 'open-cloud') { VJCloudUI.open(); }
+      else if (a === 'sync-now') { doSyncNow(); }
     });
 
     VJUI.on(document, 'click', '[data-close]', function () { closeSheet(); });
@@ -1249,6 +1305,7 @@
       }).then(function (ok) {
         if (!ok) return;
         VJDB.deleteTrade(id).then(function () {
+          if (window.VJCloud) window.VJCloud.markDeleted(id);
           S.trades = S.trades.filter(function (x) { return x.id !== id; });
           renderAll();
           VJUI.toast('Trade deleted');
@@ -1481,6 +1538,39 @@
     });
   }
 
+  /* ══════════════════════ cloud ══════════════════════ */
+
+  function initCloud() {
+    if (!window.VJCloud) return;
+
+    VJCloud.onAuthChange(function () {
+      renderCloudStatus();
+      if (VJCloudUI) VJCloudUI.render();
+    });
+
+    VJCloud.init(VJDB).then(function () {
+      renderCloudStatus();
+      VJCloud.startAutoSync();
+    });
+
+    // Android: the OAuth callback comes back as a deep link
+    if (window.VJNative && window.VJNative.plugins && window.VJNative.plugins.App) {
+      window.VJNative.plugins.App.addListener('appUrlOpen', function (data) {
+        if (!data || !data.url) return;
+        VJCloud.handleDeepLink(data.url).then(function (handled) {
+          if (handled) {
+            VJUI.toast('Signed in', 'i-check');
+            renderCloudStatus();
+            if (VJCloudUI) VJCloudUI.render();
+            // close the auth browser if it is open
+            var b = window.VJNative.plugins.Browser;
+            if (b) { try { b.close(); } catch (e) {} }
+          }
+        });
+      });
+    }
+  }
+
   function doInstall() {
     if (!S.deferredInstall) {
       VJUI.toast('Use your browser menu → “Install app” or “Add to Home Screen”');
@@ -1534,6 +1624,7 @@
     initGestures();
     initNative();
     VJPicker.init();
+    initCloud();
     window.__vjRecentSymbols = recentSymbols();
     registerSW();
 

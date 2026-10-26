@@ -4,7 +4,7 @@ Pre-built, sideloadable APK. Same journal, same UI, as a native Android app.
 
 ## Install
 
-1. Download `VibeJournal-1.1.0-debug.apk` (below, or use the **Download raw file** button)
+1. Download `VibeJournal-1.2.0-debug.apk` (below, or use the **Download raw file** button)
 2. Copy it to your phone
 3. Tap it → allow **Install unknown apps** for your file manager
 4. Open **VibeJournal** from your app drawer

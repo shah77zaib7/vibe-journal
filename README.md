@@ -54,6 +54,76 @@ launches fullscreen, works offline, and keeps your data between sessions.
 > Service workers require HTTPS (or `localhost`). If you deploy to GitHub
 > Pages, enable **Settings → Pages → Deploy from branch `main` / (root)**.
 
+## Cloud backup & sync (optional)
+
+Sign in with Google to keep a private copy of your journal in **your own
+Supabase project** and sync it across devices.
+
+**The app is local-first.** Your device's storage is always the source of
+truth; Supabase is a mirror. So the app still works offline, still works
+with no account, and signing in is entirely optional. Nothing is uploaded
+until you sign in.
+
+### Setup (about 10 minutes)
+
+**1. Create a Supabase project** — [supabase.com](https://supabase.com) → New project.
+
+**2. Run the schema.** SQL Editor → New query → paste the whole of
+[`tools/supabase-schema.sql`](tools/supabase-schema.sql) → Run.
+
+> That file creates three tables and, crucially, the **Row Level Security
+> policies** that keep your data private. Run it as-is.
+
+**3. Enable Google sign-in.** Authentication → Providers → Google → enable.
+You need a Google OAuth client:
+
+- Google Cloud Console → *APIs & Services* → *Credentials* → **Create OAuth
+  client ID** → type **Web application**
+- Authorized redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`
+- Add `<your-project-ref>.supabase.co` as an authorised JavaScript origin
+- Paste the client ID + secret into the Supabase Google provider form
+
+**4. Add your keys** to `js/config.js`:
+
+```js
+supabaseUrl: 'https://<your-project-ref>.supabase.co',
+supabaseAnonKey: '<the anon / public key>',
+```
+
+Use the **anon** key, never `service_role` — the service-role key bypasses
+Row Level Security and must never be committed or shipped.
+
+Leave the keys blank and the app stays 100% local; the Supabase code is not
+even downloaded.
+
+### How the sync works
+
+| | |
+|---|---|
+| **Source of truth** | your device (IndexedDB in the browser, SQLite in the app) |
+| **Conflict rule** | last write wins, compared on `updatedAt` |
+| **Deletes** | soft — a tombstone is synced so a deleted trade cannot reappear |
+| **Screenshots** | uploaded to a private Storage bucket at `{user_id}/{trade_id}.jpg` |
+| **When it syncs** | on sign-in, on every change, when the app returns to the foreground, and every 60s while open |
+
+Move a journal between devices or between the PWA and the app with
+**Settings → Export JSON → Import**.
+
+### 🔒 Security note
+
+The `anon` key ships inside the app and in this public repo — that is
+normal and safe, it is designed to be public. **The only thing protecting
+your trades is Row Level Security.** After running the schema, confirm it
+took effect:
+
+```sql
+select tablename, rowsecurity from pg_tables
+where schemaname = 'public' and tablename in ('trades','shots','settings');
+```
+
+Every row must read `rowsecurity = true`. If any says `false`, your data
+is exposed — re-run the schema.
+
 ## Android app
 
 The same code also builds as a native Android app with
@@ -76,6 +146,7 @@ your file manager, tap it. To rebuild after a change, run
 | | PWA | Android |
 |---|---|---|
 | Storage | IndexedDB | SQLite in the app's private data dir |
+| Cloud sync | Supabase (optional) | Supabase (optional) |
 | Service worker | yes | no — assets ship inside the APK |
 | Back button | browser history | closes the sheet, then steps back a view |
 | Data | browser storage | survives cache eviction; uninstalling removes it |
@@ -142,7 +213,12 @@ node tools/e2e.js             # core app  (38 checks)
 node tools/e2e2.js            # data, export, import  (18 checks)
 node tools/e2e3.js            # picker, candles, colour  (35 checks)
 node tools/perf-mobile.js     # mobile frame-time profile
+node tools/e2e4.js            # Google sign-in + Supabase sync  (22 checks)
 ```
+
+The sync suite runs against a **mock Supabase backend** injected at the
+network layer, so the real sync engine — dirty tracking, pull, push, soft
+deletes, last-write-wins — is exercised without needing a real project.
 
 ## Privacy
 
