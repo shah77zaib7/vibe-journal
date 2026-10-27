@@ -4,7 +4,7 @@
    ========================================================================== */
 'use strict';
 
-var VERSION = 'v1.2.0';
+var VERSION = 'v1.3.0';
 var CACHE = 'vibejournal-' + VERSION;
 
 var SHELL = [
@@ -12,6 +12,7 @@ var SHELL = [
   './index.html',
   './manifest.webmanifest',
   './css/style.css',
+  './css/gate.css',
   './js/config.js',
   './js/db.js',
   './js/stats.js',
@@ -22,6 +23,7 @@ var SHELL = [
   './js/native-store.js',
   './js/cloud.js',
   './js/cloud-ui.js',
+  './js/gate.js',
   './js/candles.js',
   './js/app.js',
   './vendor/chart.umd.js',

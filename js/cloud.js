@@ -169,6 +169,11 @@
   function onAuthChange(fn) {
     listeners.push(fn);
     attachAuthListener();
+    // returns an unsubscribe, so a caller can wait for exactly one event
+    return function off() {
+      var i = listeners.indexOf(fn);
+      if (i > -1) listeners.splice(i, 1);
+    };
   }
 
   var authListenerAttached = false;
@@ -178,6 +183,38 @@
    * may not exist yet when the app registers its listener. Attach it as soon
    * as the client exists — otherwise sign-in events are never seen.
    */
+  /**
+   * Wait for the auth state to settle.
+   *
+   * supabase-js restores a persisted session during client initialisation.
+   * The auth listener learns about it (INITIAL_SESSION), but a
+   * getSession() issued in the same breath can come back EMPTY — the two
+   * race each other. Reading getSession() and trusting it blindly would
+   * therefore sign a returning user out on every reload.
+   *
+   * So: give the listener a moment to speak, and treat the listener as the
+   * authority. If it says there is a session, there is.
+   */
+  function settleAuth() {
+    return new Promise(function (resolve) {
+      var done = false;
+      var timer = setTimeout(finish, 1200);
+
+      function finish() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve();
+      }
+
+      // the listener fires on INITIAL_SESSION the moment the client is ready
+      var off = onAuthChange(finish);
+
+      // if we already know, there is nothing to wait for
+      if (state.user) finish();
+    });
+  }
+
   function attachAuthListener() {
     if (authListenerAttached || !state.client) return;
     authListenerAttached = true;
@@ -476,8 +513,17 @@
         return client.auth.getSession();
       })
       .then(function (r) {
-        state.session = r && r.session;
-        state.user = state.session ? state.session.user : null;
+        // getSession() can lose the race against the client's own session
+        // recovery and come back empty even though a session exists. Only
+        // ever let it ADD a session — never take one away.
+        if (r && r.session) {
+          state.session = r.session;
+          state.user = r.session.user;
+        }
+        emit();
+        return settleAuth();
+      })
+      .then(function () {
         emit();
         if (state.user) return syncNow().catch(function () {});
       })

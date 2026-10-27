@@ -109,6 +109,16 @@ Row Level Security and must never be committed or shipped.
 Leave the keys blank and the app stays 100% local; the Supabase code is not
 even downloaded.
 
+### The welcome gate
+
+The app opens on a sign-in screen rather than dropping you straight into the
+journal. Sign in with Google, or choose **Continue without an account** and
+carry on with the local-only app — that choice is remembered, so you are
+never asked twice.
+
+The gate only appears when there is something to sign into: with no
+Supabase project configured it stays out of the way entirely.
+
 ### How the sync works
 
 | | |
@@ -227,6 +237,7 @@ node tools/e2e2.js            # data, export, import  (18 checks)
 node tools/e2e3.js            # picker, candles, colour  (35 checks)
 node tools/perf-mobile.js     # mobile frame-time profile
 node tools/e2e4.js            # Google sign-in + Supabase sync  (22 checks)
+node tools/e2e5.js            # the welcome gate                 (34 checks)
 ```
 
 The sync suite runs against a **mock Supabase backend** injected at the

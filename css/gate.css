@@ -1,0 +1,427 @@
+/* ============================================================================
+   VibeJournal — welcome gate
+   ----------------------------------------------------------------------------
+   The entry screen. Sits over the app until the user signs in (or chooses to
+   stay local-only). Purely decorative motion lives here; all logic is in
+   js/gate.js.
+
+   Design language: the same monochrome-dark, glass-and-hairline world as the
+   rest of the app — no new colours, no new radii, no new easing.
+   ========================================================================== */
+
+/* ─────────────────────────── the gate ─────────────────────────── */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: calc(28px + var(--safe-t)) 22px calc(28px + var(--safe-b));
+  background: var(--bg-base);
+  overflow: hidden;
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* [hidden] must beat the display:grid above */
+.gate[hidden] { display: none; }
+
+/* the app behind the gate settles back a touch while the gate is up.
+   Deliberately no filter:blur() here — a blurred layer this large
+   re-rasterises every frame, and the gate is opaque anyway, so there is
+   nothing behind it to blur. */
+.gate-open .sidebar,
+.gate-open .main,
+.gate-open .tabbar {
+  transform: scale(.985);
+  transition: transform var(--t-slow) var(--ease);
+}
+
+/* ─────────────────────── ambient background ─────────────────────── */
+/* Painted as radial gradients and moved with transform — no filter:blur()
+   layer this large, which would re-rasterise every frame. */
+
+.gate-bg {
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gate-blob {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+
+.gate-blob.g1 {
+  width: 84vmax; height: 84vmax;
+  left: -28vmax; top: -30vmax;
+  background: radial-gradient(circle at 50% 50%, var(--blob-1), transparent 66%);
+  animation: gateDrift1 28s var(--ease) infinite alternate;
+}
+
+.gate-blob.g2 {
+  width: 70vmax; height: 70vmax;
+  right: -26vmax; top: 22vh;
+  background: radial-gradient(circle at 50% 50%, var(--blob-2), transparent 68%);
+  animation: gateDrift2 34s var(--ease) infinite alternate;
+}
+
+.gate-blob.g3 {
+  width: 58vmax; height: 58vmax;
+  left: 18vw; bottom: -28vmax;
+  background: radial-gradient(circle at 50% 50%, var(--blob-3), transparent 70%);
+  animation: gateDrift3 40s var(--ease) infinite alternate;
+}
+
+/* a faint halo behind the card, breathing — this is what makes the screen
+   feel alive rather than static */
+.gate-halo {
+  position: absolute;
+  left: 50%; top: 44%;
+  width: 118vw; height: 118vw;
+  max-width: 900px; max-height: 900px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 50% 50%,
+              rgba(255, 255, 255, .085), transparent 58%);
+  animation: gateHalo 7.5s var(--ease) infinite alternate;
+  pointer-events: none;
+}
+
+/* ─────────────────────────── the card ─────────────────────────── */
+
+.gate-card {
+  position: relative;
+  outline: none;
+  width: min(430px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* staggered entrance — each child is released a beat after the last */
+.gate-card > * {
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(7px);
+}
+
+.gate.is-in .gate-card > * {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition:
+    opacity .68s var(--ease-out),
+    transform .68s var(--ease-out),
+    filter .68s var(--ease-out);
+}
+.gate.is-in .gate-card > *:nth-child(1) { transition-delay: .04s; }
+.gate.is-in .gate-card > *:nth-child(2) { transition-delay: .12s; }
+.gate.is-in .gate-card > *:nth-child(3) { transition-delay: .20s; }
+.gate.is-in .gate-card > *:nth-child(4) { transition-delay: .30s; }
+.gate.is-in .gate-card > *:nth-child(5) { transition-delay: .38s; }
+.gate.is-in .gate-card > *:nth-child(6) { transition-delay: .46s; }
+
+/* ─────────────────────── brand mark ─────────────────────── */
+
+.gate-mark {
+  position: relative;
+  width: 80px; height: 80px;
+  display: grid;
+  place-items: center;
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--glass-3), var(--glass));
+  border: 1px solid var(--stroke-2);
+  box-shadow: var(--sh-float), var(--sh-inset);
+  animation: gateFloat 6.5s var(--ease) infinite alternate;
+  margin-bottom: 26px;
+}
+
+.gate-mark .ic {
+  width: 34px; height: 34px;
+  color: var(--ink);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .5));
+}
+
+/* a ring that breathes outward — the "alive" tell */
+.gate-mark-ring {
+  position: absolute;
+  inset: -9px;
+  border-radius: 34px;
+  border: 1px solid var(--stroke);
+  animation: gateRing 3.6s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+/* ─────────────────────────── copy ─────────────────────────── */
+
+.gate-title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  font-weight: 300;
+  letter-spacing: -.03em;
+  color: var(--ink-2);
+  line-height: 1.1;
+}
+.gate-title b { font-weight: 700; color: var(--ink); }
+
+.gate-sub {
+  margin: 0 0 30px;
+  max-width: 340px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  letter-spacing: -.005em;
+}
+
+/* ─────────────────────────── buttons ─────────────────────────── */
+
+.gate-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gate-btn {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 54px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  padding: 0 20px;
+  font-family: inherit;
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--t-fast) var(--ease),
+    box-shadow var(--t-med) var(--ease),
+    background var(--t-med) var(--ease),
+    border-color var(--t-med) var(--ease),
+    color var(--t-med) var(--ease);
+}
+.gate-btn:active { transform: scale(.973); }
+.gate-btn:focus-visible { outline: 2px solid var(--ink-2); outline-offset: 3px; }
+.gate-btn[disabled] { cursor: default; }
+
+/* the Google button — the app's own solid button, so it reads as part of
+   the app, with the official multicolour G */
+.gate-btn-google {
+  background: var(--solid);
+  color: var(--on-solid);
+  box-shadow: var(--sh-float);
+}
+.gate-btn-google:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .62), var(--sh-inset);
+}
+.gate-btn-google:active:not([disabled]) { transform: scale(.973); }
+
+.gate-btn-ic {
+  display: grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  flex: 0 0 auto;
+}
+.gate-btn-ic .ic { width: 19px; height: 19px; }
+
+/* a sheen that sweeps across on hover */
+.gate-btn-google::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg,
+              transparent 32%, rgba(255, 255, 255, .5) 50%, transparent 68%);
+  transform: translateX(-115%);
+  pointer-events: none;
+}
+.gate-btn-google:hover:not([disabled])::after {
+  animation: gateSheen .95s var(--ease-out);
+}
+
+.gate-btn-ghost {
+  height: 46px;
+  background: var(--glass);
+  border-color: var(--stroke);
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 14.5px;
+}
+.gate-btn-ghost:hover {
+  background: var(--glass-2);
+  border-color: var(--stroke-2);
+  color: var(--ink);
+}
+
+/* ─────────────────────── busy state ─────────────────────── */
+
+.gate-btn-label { transition: opacity var(--t-med) var(--ease); }
+
+.gate-spinner {
+  display: none;
+  width: 19px; height: 19px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(11, 11, 13, .22);
+  border-top-color: var(--on-solid);
+  animation: gateSpin .72s linear infinite;
+}
+
+.gate-btn.is-busy .gate-btn-label { opacity: .5; }
+.gate-btn.is-busy .gate-spinner { display: block; }
+.gate-btn.is-busy .gate-btn-ic { display: none; }
+
+/* ─────────────────────── error ─────────────────────── */
+
+.gate-err {
+  margin: 16px 0 0;
+  padding: 11px 14px;
+  width: 100%;
+  border-radius: var(--r-chip);
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.45;
+  text-align: center;
+}
+.gate-err[hidden] { display: none; }
+.gate-err.is-shake { animation: gateShake .42s var(--ease); }
+
+/* ─────────────────────── trust row ─────────────────────── */
+
+.gate-trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+}
+.gate-trust li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--r-pill);
+  background: var(--glass);
+  border: 1px solid var(--hair);
+  color: var(--ink-3);
+  font-size: 12.5px;
+  letter-spacing: -.003em;
+  white-space: nowrap;
+}
+.gate-trust .ic { width: 13px; height: 13px; opacity: .85; }
+
+.gate-foot {
+  margin: 18px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-4);
+  letter-spacing: .01em;
+}
+
+/* ─────────────────────── leaving ─────────────────────── */
+
+.gate.is-leaving {
+  animation: gateOut .46s var(--ease) forwards;
+  pointer-events: none;
+}
+.gate.is-leaving .gate-card > * {
+  transition-delay: 0s !important;
+  opacity: 0;
+  transform: translateY(-10px) scale(.97);
+  filter: blur(8px);
+  transition: opacity .34s var(--ease), transform .34s var(--ease), filter .34s var(--ease);
+}
+
+/* ─────────────────────── keyframes ─────────────────────── */
+
+@keyframes gateDrift1 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(14vw, 10vh, 0) scale(1.16); }
+}
+@keyframes gateDrift2 {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to   { transform: translate3d(-16vw, -12vh, 0) scale(.92); }
+}
+@keyframes gateDrift3 {
+  from { transform: translate3d(0, 0, 0) scale(.95); opacity: .75; }
+  to   { transform: translate3d(10vw, -14vh, 0) scale(1.2); opacity: 1; }
+}
+@keyframes gateHalo {
+  from { opacity: .55; transform: translate(-50%, -50%) scale(.9); }
+  to   { opacity: 1;   transform: translate(-50%, -50%) scale(1.06); }
+}
+@keyframes gateFloat {
+  from { transform: translateY(-4px); }
+  to   { transform: translateY(5px); }
+}
+@keyframes gateRing {
+  0%   { transform: scale(1);    opacity: .55; }
+  70%  { transform: scale(1.3);  opacity: 0; }
+  100% { transform: scale(1.3);  opacity: 0; }
+}
+@keyframes gateSheen {
+  from { transform: translateX(-115%); }
+  to   { transform: translateX(115%); }
+}
+@keyframes gateSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes gateShake {
+  0%, 100% { transform: translateX(0); }
+  22%      { transform: translateX(-7px); }
+  46%      { transform: translateX(6px); }
+  70%      { transform: translateX(-3px); }
+}
+@keyframes gateOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.035); }
+}
+
+/* ─────────────────────── reduced motion ─────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-blob,
+  .gate-halo,
+  .gate-mark,
+  .gate-mark-ring,
+  .gate-spinner {
+    animation: none !important;
+  }
+  .gate-card > * {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .gate-btn-google::after { display: none; }
+}
+
+/* ─────────────────────── small screens ─────────────────────── */
+
+@media (max-height: 680px) {
+  .gate-mark { width: 64px; height: 64px; border-radius: 21px; margin-bottom: 18px; }
+  .gate-mark .ic { width: 28px; height: 28px; }
+  .gate-title { font-size: 28px; margin-bottom: 8px; }
+  .gate-sub { margin-bottom: 22px; font-size: 14px; }
+  .gate-trust { margin-top: 18px; }
+  .gate-foot { margin-top: 12px; }
+}
+
+@media (max-width: 380px) {
+  .gate-btn { height: 50px; font-size: 15px; }
+  .gate-trust li { font-size: 11.5px; padding: 6px 10px; }
+}

@@ -1,6 +1,14 @@
 /* VibeJournal — pass 3: instrument picker, candlestick chart, colour mode, perf. */
 'use strict';
 const { chromium, devices } = require('/usr/local/lib/node_modules/playwright');
+
+/* These suites exercise the app itself. The cloud layer and the welcome
+   gate have their own suites (e2e4 = sync, e2e5 = gate), so blank the
+   cloud config here — otherwise the gate stands in front of the app. */
+const BLANK_CLOUD = () => {
+  window.VJConfig = { supabaseUrl: '', supabaseAnonKey: '', shotsBucket: 'shots' };
+};
+
 const path = require('path');
 const fs = require('fs');
 
@@ -28,6 +36,7 @@ async function seed(page) {
 
   /* ================= desktop ================= */
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 950 }, deviceScaleFactor: 2 });
+  await ctx.addInitScript(BLANK_CLOUD);
   const page = await ctx.newPage();
   page.on('pageerror', e => { errors.push(e.message); console.log('  [pageerror] ' + e.message); });
   page.on('console', m => { if (m.type() === 'error') { errors.push(m.text()); console.log('  [js-error] ' + m.text()); } });
@@ -209,6 +218,7 @@ async function seed(page) {
 
   /* ================= mobile ================= */
   const mctx = await browser.newContext({ ...devices['iPhone 13'], isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await mctx.addInitScript(BLANK_CLOUD);
   const m = await mctx.newPage();
   m.on('pageerror', e => { errors.push('mobile: ' + e.message); });
   await m.goto(URL, { waitUntil: 'networkidle' });

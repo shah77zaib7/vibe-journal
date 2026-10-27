@@ -1551,6 +1551,10 @@
     VJCloud.init(VJDB).then(function () {
       renderCloudStatus();
       VJCloud.startAutoSync();
+      // The welcome gate is the app's front door. It decides for itself
+      // whether to appear (no session, never dismissed, cloud configured),
+      // so it is safe to hand it to on every boot.
+      if (window.VJGate) window.VJGate.init(VJDB);
     });
 
     // Android: the OAuth callback comes back as a deep link

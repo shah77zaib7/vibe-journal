@@ -157,6 +157,14 @@ async function installMock(page) {
   await page.waitForSelector('#recentList .empty h3', { timeout: 10000 }).catch(() => {});
   await page.waitForTimeout(800);
 
+  /* the welcome gate stands in front of the app — this suite is about the
+     cloud behind it, so step past the gate (e2e5 covers the gate itself) */
+  if (await page.locator('#gate:not([hidden])').count()) {
+    await page.locator('#gateSkip').click();
+    await page.waitForSelector('#gate', { state: 'hidden', timeout: 5000 });
+    await page.waitForTimeout(400);
+  }
+
   /* seed a realistic journal so there is something to sync */
   await page.locator('#recentList button[data-action="load-sample"]').click();
   await page.waitForSelector('#confirmModal:not([hidden])');
@@ -168,6 +176,11 @@ async function installMock(page) {
   /* ── 0. with NO config at all, the supabase bundle is never downloaded ── */
   {
     const bare = await browser.newContext({ viewport: { width: 900, height: 700 } });
+    // the repo now ships real keys in js/config.js — blank them here so this
+    // really is the "no cloud configured" case
+    await bare.addInitScript(() => {
+      window.VJConfig = { supabaseUrl: '', supabaseAnonKey: '', shotsBucket: 'shots' };
+    });
     const bp = await bare.newPage();
     await bp.goto(APP_URL, { waitUntil: 'networkidle' });
     await bp.waitForTimeout(1500);
