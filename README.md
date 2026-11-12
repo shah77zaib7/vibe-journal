@@ -54,98 +54,18 @@ launches fullscreen, works offline, and keeps your data between sessions.
 > Service workers require HTTPS (or `localhost`). If you deploy to GitHub
 > Pages, enable **Settings → Pages → Deploy from branch `main` / (root)**.
 
-## Cloud backup & sync (optional)
+## Backup
 
-Sign in with Google to keep a private copy of your journal in **your own
-Supabase project** and sync it across devices.
+There is no cloud. Your backup is a file you own.
 
-**The app is local-first.** Your device's storage is always the source of
-truth; Supabase is a mirror. So the app still works offline, still works
-with no account, and signing in is entirely optional. Nothing is uploaded
-until you sign in.
+**Settings → Data → Export** writes a single JSON file containing every
+trade, every screenshot (as base64) and your settings. **Import** restores
+it — on any device, in any browser.
 
-### Setup (about 10 minutes)
+That is also how you move a journal between the PWA and the Android app.
 
-> **New to this? Follow the click-by-click guide →
-> [`docs/SETUP-CLOUD.md`](docs/SETUP-CLOUD.md)** — it goes screen by screen
-> through Google Cloud, Supabase and the app, with the common traps called
-> out. Or let the helper do the fiddly part:
->
-> ```bash
-> npm run setup:cloud
-> ```
->
-> It decodes your key, **refuses a `service_role` key**, checks your project
-> actually answers, and writes `js/config.js` for you.
-
-
-**1. Create a Supabase project** — [supabase.com](https://supabase.com) → New project.
-
-**2. Run the schema.** SQL Editor → New query → paste the whole of
-[`tools/supabase-schema.sql`](tools/supabase-schema.sql) → Run.
-
-> That file creates three tables and, crucially, the **Row Level Security
-> policies** that keep your data private. Run it as-is.
-
-**3. Enable Google sign-in.** Authentication → Providers → Google → enable.
-You need a Google OAuth client:
-
-- Google Cloud Console → *APIs & Services* → *Credentials* → **Create OAuth
-  client ID** → type **Web application**
-- Authorized redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`
-- Add `<your-project-ref>.supabase.co` as an authorised JavaScript origin
-- Paste the client ID + secret into the Supabase Google provider form
-
-**4. Add your keys** to `js/config.js`:
-
-```js
-supabaseUrl: 'https://<your-project-ref>.supabase.co',
-supabaseAnonKey: '<the anon / public key>',
-```
-
-Use the **anon** key, never `service_role` — the service-role key bypasses
-Row Level Security and must never be committed or shipped.
-
-Leave the keys blank and the app stays 100% local; the Supabase code is not
-even downloaded.
-
-### The welcome gate
-
-The app opens on a sign-in screen rather than dropping you straight into the
-journal. Sign in with Google, or choose **Continue without an account** and
-carry on with the local-only app — that choice is remembered, so you are
-never asked twice.
-
-The gate only appears when there is something to sign into: with no
-Supabase project configured it stays out of the way entirely.
-
-### How the sync works
-
-| | |
-|---|---|
-| **Source of truth** | your device (IndexedDB in the browser, SQLite in the app) |
-| **Conflict rule** | last write wins, compared on `updatedAt` |
-| **Deletes** | soft — a tombstone is synced so a deleted trade cannot reappear |
-| **Screenshots** | uploaded to a private Storage bucket at `{user_id}/{trade_id}.jpg` |
-| **When it syncs** | on sign-in, on every change, when the app returns to the foreground, and every 60s while open |
-
-Move a journal between devices or between the PWA and the app with
-**Settings → Export JSON → Import**.
-
-### 🔒 Security note
-
-The `anon` key ships inside the app and in this public repo — that is
-normal and safe, it is designed to be public. **The only thing protecting
-your trades is Row Level Security.** After running the schema, confirm it
-took effect:
-
-```sql
-select tablename, rowsecurity from pg_tables
-where schemaname = 'public' and tablename in ('trades','shots','settings');
-```
-
-Every row must read `rowsecurity = true`. If any says `false`, your data
-is exposed — re-run the schema.
+> Screenshots are embedded in the JSON, so a backup with many chart images
+> is a large file. A journal with no screenshots stays small.
 
 ## Android app
 
@@ -169,7 +89,6 @@ your file manager, tap it. To rebuild after a change, run
 | | PWA | Android |
 |---|---|---|
 | Storage | IndexedDB | SQLite in the app's private data dir |
-| Cloud sync | Supabase (optional) | Supabase (optional) |
 | Service worker | yes | no — assets ship inside the APK |
 | Back button | browser history | closes the sheet, then steps back a view |
 | Data | browser storage | survives cache eviction; uninstalling removes it |
@@ -220,6 +139,8 @@ js/stats.js           analytics engine (pure functions)
 js/instruments.js     instrument catalogue
 js/picker.js          searchable combobox
 js/candles.js         candlestick renderer
+js/native-store.js    SQLite layer (Android)
+js/native.js          Capacitor bridge
 js/ui.js              formatting + chart theming
 js/app.js             application
 sw.js                 precaching service worker
@@ -235,21 +156,33 @@ node tools/verify.js         # static integrity sweep
 node tools/e2e.js             # core app  (38 checks)
 node tools/e2e2.js            # data, export, import  (18 checks)
 node tools/e2e3.js            # picker, candles, colour  (35 checks)
+node tools/e2e6.js            # local data persistence        (30 checks)
 node tools/perf-mobile.js     # mobile frame-time profile
-node tools/e2e4.js            # Google sign-in + Supabase sync  (22 checks)
-node tools/e2e5.js            # the welcome gate                 (34 checks)
 ```
 
-The sync suite runs against a **mock Supabase backend** injected at the
-network layer, so the real sync engine — dirty tracking, pull, push, soft
-deletes, last-write-wins — is exercised without needing a real project.
+The persistence suite is the important one now that the app is local-only:
+it writes trades, screenshots and settings, then refreshes, reloads five
+times in a row, **closes the whole browser and reopens it on the same
+profile**, goes offline and comes back, and round-trips an export → erase →
+import — asserting the data is byte-identical every time.
 
 ## Privacy
 
-There is no analytics, no tracking and no network call of any kind after the
-app is cached. Your journal is stored under the `vibejournal` IndexedDB
-database on your device. Clearing site data deletes it permanently — export a
-backup first if you care about it.
+There is no analytics, no tracking, and **no account, no sign-in and no
+network call of any kind** after the app is cached. The app has no server
+component at all — there is nowhere for your data to go.
+
+Your journal is stored under the `vibejournal` IndexedDB database (browser)
+or a private SQLite database (Android), on your device only.
+
+> **The one thing that can delete your journal** is clearing the app's site
+> data — in a browser that is *Settings → Clear browsing data*; on Android
+> it is *Settings → Apps → VibeJournal → Storage → Clear storage*, or
+> simply uninstalling the app.
+>
+> That is why **Settings → Data → Export** exists. A JSON file with every
+> trade, screenshot and setting, that you can restore anywhere, any time.
+> Export regularly if this journal matters to you.
 
 ## Licence
 

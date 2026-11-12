@@ -6,7 +6,7 @@ const path = require('path');
 const P = path.resolve(__dirname, '..') + path.sep;
 const html = fs.readFileSync(P+'index.html','utf8');
 const css  = fs.readFileSync(P+'css/style.css','utf8');
-const js   = ['app','ui','db','stats','instruments','picker','candles','cloud','cloud-ui','config']
+const js   = ['app','ui','db','stats','instruments','picker','candles','native','native-store']
                 .map(f => fs.readFileSync(P+`js/${f}.js`,'utf8')).join('\n');
 let fail = 0;
 

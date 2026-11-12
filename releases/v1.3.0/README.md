@@ -1,3 +1,7 @@
+> **Note:** cloud backup and Google sign-in were **removed in v1.4.0**.
+> This release note describes what v1.3.0 shipped. The app is now local-only
+> with no account and no network calls — see the [main README](../../README.md).
+
 # VibeJournal 1.3.0 — Android app
 
 Pre-built, sideloadable APK. Same journal, same UI, as a native Android app.

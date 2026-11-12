@@ -20,7 +20,6 @@
 <meta name="mobile-web-app-capable" content="yes" />
 
 <link rel="stylesheet" href="css/style.css" />
-<link rel="stylesheet" href="css/gate.css" />
 </head>
 <body>
 
@@ -56,51 +55,8 @@
   <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5L21 19.5H3z"/><path d="M12 10v4M12 17h.01"/></symbol>
   <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5A2.5 2.5 0 0 1 6 6h12.5A2 2 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19H6a2.5 2.5 0 0 1-2.5-2.5z"/><path d="M3.5 9.5h13a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-13"/><circle cx="16" cy="12" r=".9" fill="currentColor"/></symbol>
-  <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 18.6a4 4 0 0 1-.5-8 5.2 5.2 0 0 1 10-.6 3.9 3.9 0 0 1 .3 7.7"/><path d="M7.2 18.6h9.5a3.8 3.8 0 0 0 .3-7.5"/><path d="M12 11.4v7.1M9.2 14.2 12 11.4l2.8 2.8"/></symbol>
-  <symbol id="i-google" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.4a5.5 5.5 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.6-5.2 3.6-8.8z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3A7.2 7.2 0 0 1 5.3 14.3c0-.5.1-1 .2-1.5H1.4v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.1 7.1 0 0 1 0-4.6V6.6H1.4a12 12 0 0 0 0 10.8z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8l3.5-3.5A12 12 0 0 0 1.4 6.6l3.9 3.1A7.2 7.2 0 0 1 12 4.8z"/></symbol>
 </defs>
 </svg>
-
-<!-- ══════════════════ welcome gate (sign in) ══════════════════ -->
-<!-- The app's entry screen. Shown until the user signs in, or opts to stay
-     local-only. Purely presentational — js/gate.js drives it. -->
-<div class="gate" id="gate" hidden>
-  <div class="gate-bg" aria-hidden="true">
-    <span class="gate-blob g1"></span>
-    <span class="gate-blob g2"></span>
-    <span class="gate-blob g3"></span>
-  </div>
-  <span class="gate-halo" aria-hidden="true"></span>
-
-  <div class="gate-card" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="gateTitle" aria-describedby="gateSub">
-    <div class="gate-mark" aria-hidden="true">
-      <span class="gate-mark-ring"></span>
-      <svg class="ic"><use href="#i-bolt"/></svg>
-    </div>
-
-    <h1 class="gate-title" id="gateTitle"><b>Vibe</b>Journal</h1>
-    <p class="gate-sub" id="gateSub">Your trading journal, on every device you own. Sign in to back it up and sync it automatically.</p>
-
-    <div class="gate-actions">
-      <button class="gate-btn gate-btn-google" id="gateGoogle" type="button">
-        <span class="gate-btn-ic" aria-hidden="true"><svg class="ic"><use href="#i-google"/></svg></span>
-        <span class="gate-btn-label">Continue with Google</span>
-        <span class="gate-spinner" aria-hidden="true"></span>
-      </button>
-      <button class="gate-btn gate-btn-ghost" id="gateSkip" type="button">Continue without an account</button>
-    </div>
-
-    <p class="gate-err" id="gateErr" role="alert" hidden></p>
-
-    <ul class="gate-trust">
-      <li><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg> Local-first</li>
-      <li><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg> Works offline</li>
-      <li><svg class="ic" aria-hidden="true"><use href="#i-dl"/></svg> Export anytime</li>
-    </ul>
-
-    <p class="gate-foot" id="gateFoot">Your journal stays on this device. Cloud backup is optional.</p>
-  </div>
-</div>
 
 <!-- decorative depth blobs (grayscale only) -->
 <!-- Painted as gradients rather than blurred divs: a filter:blur() layer this
@@ -126,10 +82,6 @@
   </nav>
 
   <div class="side-foot">
-    <button class="side-cloud" data-action="open-cloud">
-      <span class="side-cloud-ic"><svg class="ic"><use href="#i-cloud"/></svg></span>
-      <span class="side-cloud-t"><b id="sideCloudTitle">Cloud backup</b><span id="sideCloudSub">Not signed in</span></span>
-    </button>
     <div class="privacy-note">
       <svg class="ic"><use href="#i-target"/></svg>
       <div><b>Local only</b><span>Your journal never leaves this device.</span></div>
@@ -466,19 +418,7 @@
       <div class="settings-col">
 
         <section class="glass panel">
-          <header class="panel-head"><h2>Cloud &amp; sync</h2></header>
-          <div class="setting-row">
-            <div class="setting-txt"><b>Google account</b><span id="setCloudDesc">Sign in to back up your journal to your own Supabase project and sync across devices.</span></div>
-            <div class="setting-ctl"><button class="btn-ghost sm" data-action="open-cloud"><svg class="ic"><use href="#i-cloud"/></svg><span id="setCloudBtn">Sign in</span></button></div>
-          </div>
-          <div class="setting-row">
-            <div class="setting-txt"><b>Sync status</b><span id="setSyncStatus">Not signed in.</span></div>
-            <div class="setting-ctl"><button class="btn-ghost sm" data-action="sync-now"><svg class="ic"><use href="#i-dl"/></svg><span>Sync now</span></button></div>
-          </div>
-        </section>
-
-        <section class="glass panel">
-          <header class="panel-head"><h2>Account</h2></header>
+          <header class="panel-head"><h2>Trading account</h2></header>
           <div class="setting-row">
             <div class="setting-txt"><b>Starting balance</b><span>Baseline for your equity curve and return %.</span></div>
             <div class="setting-ctl ctl-money"><span id="curSymA">$</span><input id="setBalance" class="input bare" type="number" inputmode="decimal" step="0.01" min="0" /></div>
@@ -724,18 +664,6 @@
   <div class="sheet-body" id="detailBody"></div>
 </section>
 
-<!-- ══════════ cloud account sheet ══════════ -->
-<div class="scrim" id="cloudScrim" hidden></div>
-<section class="sheet" id="cloudSheet" hidden role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
-  <div class="sheet-grab"></div>
-  <header class="sheet-head">
-    <button class="icon-btn" data-cloud-action="close" aria-label="Close"><svg class="ic"><use href="#i-close"/></svg></button>
-    <h2 id="cloudTitle">Cloud backup</h2>
-    <span style="width:40px"></span>
-  </header>
-  <div class="sheet-body"></div>
-</section>
-
 <!-- ══════════ confirm ══════════ -->
 <section class="modal" id="confirmModal" hidden role="alertdialog" aria-modal="true" aria-labelledby="cfTitle">
   <div class="modal-card glass">
@@ -753,7 +681,6 @@
 <div class="edge-hint" id="edgeHint" hidden>Swipe from left edge to go back</div>
 
 <script src="vendor/chart.umd.js"></script>
-<script src="js/config.js"></script>
 <script src="js/native.js"></script>
 <script src="js/native-store.js"></script>
 <script src="js/db.js"></script>
@@ -761,9 +688,6 @@
 <script src="js/instruments.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/picker.js"></script>
-<script src="js/cloud.js"></script>
-<script src="js/cloud-ui.js"></script>
-<script src="js/gate.js"></script>
 <script src="js/candles.js"></script>
 <script src="js/app.js"></script>
 </body>
