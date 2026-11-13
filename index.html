@@ -97,14 +97,6 @@
 <main class="main" id="main">
 
   <!-- top app bar -->
-  <div class="store-warn" id="storeWarn" hidden role="alert">
-    <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
-    <div>
-      <b>Storage fallback</b>
-      <span id="storeWarnText">The private database could not be opened, so trades are being saved in the app's browser storage instead. Export a backup if this continues.</span>
-    </div>
-  </div>
-
   <header class="appbar">
     <div class="appbar-in">
       <div class="appbar-titles">
@@ -476,6 +468,10 @@
           <div class="setting-row">
             <div class="setting-txt"><b>Load sample data</b><span>40 realistic trades to explore the app. Adds to your journal.</span></div>
             <div class="setting-ctl"><button class="btn-ghost sm" data-action="load-sample">Load</button></div>
+          </div>
+          <div class="setting-row" id="storeRow" hidden>
+            <div class="setting-txt"><b>Storage</b><span id="storeStatus">—</span></div>
+            <div class="setting-ctl"><span class="setting-note" id="storeNote"></span></div>
           </div>
           <div class="setting-row danger">
             <div class="setting-txt"><b>Clear all data</b><span>Erase every trade, screenshot and setting. Cannot be undone.</span></div>

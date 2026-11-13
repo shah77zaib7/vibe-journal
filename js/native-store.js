@@ -59,17 +59,22 @@
             return c.open();
           })
           .then(function () {
-            return conn.execute([
-              'PRAGMA foreign_keys = ON',
-              'CREATE TABLE IF NOT EXISTS trades (' +
-                'id TEXT PRIMARY KEY NOT NULL, dt INTEGER NOT NULL, symbol TEXT, direction TEXT, ' +
-                'entry REAL, sl REAL, tp REAL, lots REAL, riskMode TEXT, risk REAL, riskAmount REAL, ' +
-                'plannedRR REAL, strategy TEXT, result TEXT, pnl REAL, notes TEXT, tags TEXT, ' +
-                'shotId TEXT, createdAt INTEGER, updatedAt INTEGER)',
-              'CREATE INDEX IF NOT EXISTS idx_trades_dt ON trades(dt)',
-              'CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol)',
-              'CREATE TABLE IF NOT EXISTS shots (id TEXT PRIMARY KEY NOT NULL, data TEXT, type TEXT)',
-              'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY NOT NULL, value TEXT)'
+            // executeSet, NOT execute: on Android the plugin's execute()
+            // takes a single SQL STRING, so passing an array returns null
+            // and the plugin dies on statements.replace(...) — a NullPointer
+            // Exception that took the whole database down. executeSet takes
+            // the {statement, values} shape and works on every platform.
+            return conn.executeSet([
+              { statement: 'PRAGMA foreign_keys = ON', values: [] },
+              { statement: 'CREATE TABLE IF NOT EXISTS trades (' +
+                  'id TEXT PRIMARY KEY NOT NULL, dt INTEGER NOT NULL, symbol TEXT, direction TEXT, ' +
+                  'entry REAL, sl REAL, tp REAL, lots REAL, riskMode TEXT, risk REAL, riskAmount REAL, ' +
+                  'plannedRR REAL, strategy TEXT, result TEXT, pnl REAL, notes TEXT, tags TEXT, ' +
+                  'shotId TEXT, createdAt INTEGER, updatedAt INTEGER)', values: [] },
+              { statement: 'CREATE INDEX IF NOT EXISTS idx_trades_dt ON trades(dt)', values: [] },
+              { statement: 'CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol)', values: [] },
+              { statement: 'CREATE TABLE IF NOT EXISTS shots (id TEXT PRIMARY KEY NOT NULL, data TEXT, type TEXT)', values: [] },
+              { statement: 'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY NOT NULL, value TEXT)', values: [] }
             ]);
           })
           .then(function () { return conn; });

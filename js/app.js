@@ -51,6 +51,7 @@
   }
 
   function syncSettingsUI() {
+    warnIfStorageFallback();
     $('#setBalance').value = S.settings.balance;
     $('#setCurrency').value = S.settings.currency;
     $('#curSymA').textContent = S.settings.currency;
@@ -1510,22 +1511,23 @@
   }
 
   /**
-   * If the private database could not be opened, the app fell back to
-   * browser storage. Say so, loudly and permanently — a silent fallback
-   * is indistinguishable from data loss.
+   * Storage health. The app falls back to browser storage if the private
+   * database cannot be opened — the trades are still saved, so this is
+   * reported quietly in Settings → Data rather than as a banner over the
+   * journal.
    */
   function warnIfStorageFallback() {
     var err = VJDB.nativeError && VJDB.nativeError();
-    var box = $('#storeWarn');
-    if (!box) return;
-    if (!err) { box.hidden = true; return; }
-    var msg = $('#storeWarnText');
-    if (msg) {
-      msg.textContent = 'The private database could not be opened (' +
-        (err.message || 'unknown error') +
-        '), so trades are being saved in the app\'s browser storage instead. Export a backup if this continues.';
+    var row = $('#storeRow');
+    if (!row) return;
+    if (!err) { row.hidden = true; return; }
+    row.hidden = false;
+    var status = $('#storeStatus');
+    if (status) {
+      status.textContent = 'Using browser storage (the private database could not be opened). Your trades are still saved here.';
     }
-    box.hidden = false;
+    var note = $('#storeNote');
+    if (note) note.textContent = err.message || '';
   }
 
   function boot() {
@@ -1566,7 +1568,7 @@
       if (S.view === 'dashboard' || S.view === 'analytics') renderAll();
     }, 900000);
 
-    $('#appVer').textContent = '1.4.2';
+    $('#appVer').textContent = '1.4.3';
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

@@ -170,11 +170,12 @@ different places depending on where it runs:
   and round-trips an export → erase → import — asserting the data is
   byte-identical every time.
 - **e2e7 (native storage)** — the Android path. The app uses SQLite there,
-  not IndexedDB, and that path had a silent-failure bug that no browser
+  not IndexedDB, and that path had four silent-failure bugs that no browser
   test could ever catch (see below). It runs the real `js/native-store.js`
-  against a mock SQLite plugin: the bundled plugin's exports, a full
-  trade/screenshot/settings round-trip, persistence across three separate
-  store instances, and — the important one — that a broken plugin **fails
+  against a mock *native bridge*, using the real bundled plugin class on
+  top: the plugin's exports, a full trade/screenshot/settings round-trip,
+  persistence across three separate store instances, the correct call shape
+  for the schema, and — the important one — that a broken plugin **fails
   loudly** instead of quietly discarding every write.
 
 The persistence suite is the important one now that the app is local-only:
@@ -196,8 +197,8 @@ Both are created with `IF NOT EXISTS`, so there is no migration that can
 drop a table and no upgrade that can lose data.
 
 **If the private database cannot be opened, the app falls back to browser
-storage and tells you** — a persistent banner at the top of the screen. It
-will never silently stop saving your trades.
+storage** — your trades are still saved, and the status is reported quietly
+in **Settings → Data**. Nothing appears over your journal.
 
 > ### A bug worth knowing about
 >
@@ -226,8 +227,13 @@ will never silently stop saving your trades.
 >    visible warning.
 > 3. **The native path has its own test suite** that runs the *real* plugin
 >    class against a mock native bridge — in a real browser, from a real
->    classic script, so a wrong import path or a missing method fails the
->    build.
+>    classic script, so a wrong import path, a missing method or the wrong
+>    call shape fails the build. The mock enforces the plugin's real
+>    contract, which is how the fourth bug was caught: Android's
+>    `execute()` takes a *single SQL string*, so passing an array returned
+>    null and the plugin died on a `NullPointerException`. The schema is
+>    created with `executeSet()`, which takes `{statement, values}` and
+>    works everywhere.
 
 ## Privacy
 

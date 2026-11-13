@@ -113,7 +113,9 @@ function selectSql(file, sql, values) {
    (sqlite.init) slip through unnoticed. */
 
 function makeBridge(file) {
+  const calls = [];
   return {
+    calls: calls,
     /* the wrapper calls these on the bridge */
     checkConnectionsConsistency: () => Promise.resolve({ result: true }),
     createConnection: () => Promise.resolve(),
@@ -123,10 +125,21 @@ function makeBridge(file) {
     isDBOpen: () => Promise.resolve({ result: true }),
     getDatabaseList: () => Promise.resolve({ result: [] }),
     deleteDatabase: () => Promise.resolve(),
-    query: (opts) => Promise.resolve({ values: selectSql(file, opts.statement, opts.values || []) }),
-    run: (opts) => { applySql(file, opts.statement, opts.values || []); return Promise.resolve({ changes: { rows: { affectedRows: 1 } } }); },
-    execute: (opts) => { (opts.statements || []).forEach(s => applySql(file, s, [])); return Promise.resolve({}); },
+    query: (opts) => { calls.push('query'); return Promise.resolve({ values: selectSql(file, opts.statement, opts.values || []) }); },
+    run: (opts) => { calls.push('run'); applySql(file, opts.statement, opts.values || []); return Promise.resolve({ changes: { rows: { affectedRows: 1 } } }); },
+    execute: (opts) => {
+      calls.push('execute');
+      // The real Android plugin reads `statements` as a single STRING. An
+      // array comes back null and the plugin dies on a NullPointerException.
+      // Reject it here so the test catches a wrong call shape.
+      if (typeof opts.statements !== 'string') {
+        return Promise.reject(new Error('execute() expects a single SQL string, got ' + typeof opts.statements));
+      }
+      applySql(file, opts.statements, []);
+      return Promise.resolve({});
+    },
     executeSet: (opts) => {
+      calls.push('executeSet');
       let n = 0;
       (opts.set || []).forEach(s => { applySql(file, s.statement, s.values || []); n++; });
       return Promise.resolve({ changes: { rows: { affectedRows: n } } });
@@ -227,7 +240,12 @@ const BRIDGE_SRC = String.raw`
         deleteDatabase: () => Promise.resolve(),
         query: (o) => Promise.resolve({ values: selectSql(o.statement, o.values || []) }),
         run: (o) => { applySql(o.statement, o.values || []); return Promise.resolve({ changes: { rows: { affectedRows: 1 } } }); },
-        execute: (o) => { (o.statements||[]).forEach(x => applySql(x, [])); return Promise.resolve({}); },
+        execute: (o) => {
+          if (typeof o.statements !== 'string') {
+            return Promise.reject(new Error('execute() expects a single SQL string, got ' + typeof o.statements));
+          }
+          applySql(o.statements, []); return Promise.resolve({});
+        },
         executeSet: (o) => { let n=0; (o.set||[]).forEach(x => { applySql(x.statement, x.values||[]); n++; }); return Promise.resolve({ changes: { rows: { affectedRows: n } } }); }
       }
     }
@@ -292,6 +310,13 @@ const BRIDGE_SRC = String.raw`
 
     await store.putTrade(trade);
     const all = await store.allTrades();
+
+    // the schema must be created through executeSet, never execute() —
+    // the real Android plugin's execute() reads `statements` as a single
+    // string and dies on a NullPointerException if it gets an array
+    ok('the schema is created with executeSet, not execute()',
+      bridge.calls.indexOf('executeSet') > -1 && bridge.calls.indexOf('execute') === -1,
+      'calls: ' + bridge.calls.join(','));
     ok('a trade is written to SQLite', all.length === 1, 'count=' + all.length);
     ok('the trade round-trips field for field',
       all.length === 1 && all[0].id === trade.id && all[0].pnl === 200 &&
@@ -439,14 +464,16 @@ const BRIDGE_SRC = String.raw`
     const st = await page.evaluate(() => ({
       backend: window.VJDB.backend(),
       err: window.VJDB.nativeError() ? window.VJDB.nativeError().message : null,
-      warnHidden: document.querySelector('#storeWarn').hidden,
-      warnText: (document.querySelector('#storeWarnText') || {}).textContent || ''
+      storeRowHidden: document.querySelector('#storeRow').hidden,
+      storeText: (document.querySelector('#storeStatus') || {}).textContent || '',
+      topBanner: !!document.querySelector('#storeWarn')
     }));
 
     ok('the app falls back to browser storage', st.backend === 'indexeddb', st.backend);
     ok('the fallback reason is exposed to the app', !!st.err, String(st.err));
-    ok('the user is shown a storage warning', st.warnHidden === false);
-    ok('the warning explains what happened', /could not be opened/i.test(st.warnText), st.warnText);
+    ok('the storage status appears in Settings', st.storeRowHidden === false);
+    ok('the status explains what happened', /browser storage/i.test(st.storeText), st.storeText);
+    ok('there is no banner at the top of the app', st.topBanner === false);
 
     // and — the important part — trades still save
     await page.evaluate(async () => {
@@ -460,8 +487,8 @@ const BRIDGE_SRC = String.raw`
     const n = await page.evaluate(async () => (await window.VJDB.allTrades()).length);
     ok('trades still save after the fallback', n === 1, 'count=' + n);
 
-    const stillWarned = await page.evaluate(() => !document.querySelector('#storeWarn').hidden);
-    ok('the warning persists across a reload', stillWarned === true);
+    const stillWarned = await page.evaluate(() => !document.querySelector('#storeRow').hidden);
+    ok('the storage status persists across a reload', stillWarned === true);
 
     await browser.close();
   }
@@ -484,11 +511,11 @@ const BRIDGE_SRC = String.raw`
     const st = await page.evaluate(() => ({
       backend: window.VJDB.backend(),
       err: window.VJDB.nativeError() ? window.VJDB.nativeError().message : null,
-      warnHidden: document.querySelector('#storeWarn').hidden
+      storeRowHidden: document.querySelector('#storeRow').hidden
     }));
 
     ok('the app uses SQLite, not the fallback', st.backend === 'sqlite', st.backend + ' / ' + st.err);
-    ok('no fallback warning is shown', st.warnHidden === true, JSON.stringify(st));
+    ok('the storage status stays hidden when all is well', st.storeRowHidden === true, JSON.stringify(st));
 
     // write a trade and read it back
     await page.evaluate(async () => {
