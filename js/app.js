@@ -1509,6 +1509,25 @@
     });
   }
 
+  /**
+   * If the private database could not be opened, the app fell back to
+   * browser storage. Say so, loudly and permanently — a silent fallback
+   * is indistinguishable from data loss.
+   */
+  function warnIfStorageFallback() {
+    var err = VJDB.nativeError && VJDB.nativeError();
+    var box = $('#storeWarn');
+    if (!box) return;
+    if (!err) { box.hidden = true; return; }
+    var msg = $('#storeWarnText');
+    if (msg) {
+      msg.textContent = 'The private database could not be opened (' +
+        (err.message || 'unknown error') +
+        '), so trades are being saved in the app\'s browser storage instead. Export a backup if this continues.';
+    }
+    box.hidden = false;
+  }
+
   function boot() {
     VJDB.requestPersistent();
 
@@ -1525,11 +1544,13 @@
       var hash = (location.hash || '').replace('#', '');
       go(VIEW_META[hash] ? hash : 'dashboard');
       refreshStorage();
+      warnIfStorageFallback();
       // manifest shortcut: index.html?action=new
       if (/[?&]action=new/.test(location.search)) setTimeout(function () { openForm(null); }, 260);
     }).catch(function (err) {
       applyTheme();
       go('dashboard');
+      warnIfStorageFallback();
       VJUI.toast('Storage unavailable: ' + err.message, 'i-alert');
     });
 
@@ -1545,7 +1566,7 @@
       if (S.view === 'dashboard' || S.view === 'analytics') renderAll();
     }, 900000);
 
-    $('#appVer').textContent = '1.4.0';
+    $('#appVer').textContent = '1.4.1';
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

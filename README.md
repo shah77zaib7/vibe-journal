@@ -157,14 +157,65 @@ node tools/e2e.js             # core app  (38 checks)
 node tools/e2e2.js            # data, export, import  (18 checks)
 node tools/e2e3.js            # picker, candles, colour  (35 checks)
 node tools/e2e6.js            # local data persistence        (30 checks)
+node tools/e2e7.js            # native (Android) storage       (32 checks)
 node tools/perf-mobile.js     # mobile frame-time profile
 ```
+
+Two suites guard the storage, because the app keeps its data in two
+different places depending on where it runs:
+
+- **e2e6 (persistence)** — the browser path. Writes trades, screenshots and
+  settings, then refreshes, reloads five times in a row, **closes the whole
+  browser and reopens it on the same profile**, goes offline and comes back,
+  and round-trips an export → erase → import — asserting the data is
+  byte-identical every time.
+- **e2e7 (native storage)** — the Android path. The app uses SQLite there,
+  not IndexedDB, and that path had a silent-failure bug that no browser
+  test could ever catch (see below). It runs the real `js/native-store.js`
+  against a mock SQLite plugin: the bundled plugin's exports, a full
+  trade/screenshot/settings round-trip, persistence across three separate
+  store instances, and — the important one — that a broken plugin **fails
+  loudly** instead of quietly discarding every write.
 
 The persistence suite is the important one now that the app is local-only:
 it writes trades, screenshots and settings, then refreshes, reloads five
 times in a row, **closes the whole browser and reopens it on the same
 profile**, goes offline and comes back, and round-trips an export → erase →
 import — asserting the data is byte-identical every time.
+
+## Storage
+
+Two backends, chosen automatically:
+
+| Where it runs | Backend | Where the data lives |
+|---|---|---|
+| Browser (PWA) | IndexedDB, database `vibejournal` | the browser's site storage |
+| Android app | SQLite, database `vibejournal` | the app's private data directory |
+
+Both are created with `IF NOT EXISTS`, so there is no migration that can
+drop a table and no upgrade that can lose data.
+
+**If the private database cannot be opened, the app falls back to browser
+storage and tells you** — a persistent banner at the top of the screen. It
+will never silently stop saving your trades.
+
+> ### A bug worth knowing about
+>
+> The Android app once stored **nothing at all** and looked perfectly
+> healthy. The SQLite plugin was bundled from its UMD entry, which expects
+> a global `capacitorExports` to exist; the bundle therefore threw on
+> import, the native store caught the error and returned `null`, and every
+> method then returned a harmless default — `allTrades()` returned `[]`,
+> `putTrade()` returned without writing. The UI updated optimistically, so
+> it looked like the app worked.
+>
+> Two things changed so it cannot happen again:
+>
+> 1. **The bundle is built from the plugin's real ESM entry**, and the
+>    build now *fails* if the bundle does not export `SQLiteConnection`.
+> 2. **The store rejects instead of swallowing.** A failure is recorded,
+>    surfaced to the app, and the app falls back to browser storage with a
+>    visible warning.
 
 ## Privacy
 

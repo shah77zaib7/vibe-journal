@@ -257,20 +257,53 @@
     return typeof ns.available === 'function' ? !!ns.available() : !!ns.available;
   }
 
+  /* If the native store cannot open, fall back to the browser store for the
+     rest of the session rather than throwing the app into a broken state.
+     The fallback is surfaced to the user, because on Android the two stores
+     are different places — a trade saved before the fallback would not be
+     visible after it. */
+  var nativeBroken = false;
+  var nativeError = null;
+
+  function useNative() {
+    return !nativeBroken && nativeAvailable();
+  }
+
+  function noteNativeFailure(e) {
+    if (nativeBroken) return;
+    nativeBroken = true;
+    nativeError = e;
+    try {
+      if (global.console) console.error('VJDB: native store unavailable, using browser storage —', e);
+    } catch (err) { /* noop */ }
+  }
+
   function pick() {
-    return nativeAvailable() ? global.VJNativeStore : global.VJDBWeb;
+    return useNative() ? global.VJNativeStore : global.VJDBWeb;
   }
 
   function proxy(name) {
     return function () {
       var args = arguments;
-      return pick()[name].apply(pick(), args);
+      if (!useNative()) return global.VJDBWeb[name].apply(global.VJDBWeb, args);
+      return Promise.resolve()
+        .then(function () { return global.VJNativeStore[name].apply(global.VJNativeStore, args); })
+        .catch(function (e) {
+          // only fall back when the store itself could not open — a failed
+          // query should surface, not silently rerun somewhere else
+          var f = global.VJNativeStore.failure && global.VJNativeStore.failure();
+          if (!f) throw e;
+          noteNativeFailure(f);
+          return global.VJDBWeb[name].apply(global.VJDBWeb, args);
+        });
     };
   }
 
   global.VJDB = {
     isNative: nativeAvailable,
-    backend: function () { return nativeAvailable() ? 'sqlite' : 'indexeddb'; },
+    backend: function () { return useNative() ? 'sqlite' : 'indexeddb'; },
+    /* set when the native store failed and the browser store took over */
+    nativeError: function () { return nativeError; },
     open: proxy('open'),
     allTrades: proxy('allTrades'),
     getTrade: proxy('getTrade'),

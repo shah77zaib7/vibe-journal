@@ -73,8 +73,28 @@
     if (sqliteMod) return Promise.resolve(sqliteMod);
     if (!isNative) return Promise.resolve(null);
     return import('./vendor/cap-sqlite.js')
-      .then(function (m) { sqliteMod = m; return m; })
-      .catch(function () { return null; });
+      .then(function (m) {
+        // The bundle MUST export these. If it does not, the Android app
+        // would silently store nothing, so refuse loudly here rather than
+        // letting a broken bundle turn into silent data loss.
+        if (!m || typeof m.SQLiteConnection !== 'function') {
+          throw new Error('The bundled SQLite plugin is missing SQLiteConnection.');
+        }
+        sqliteMod = m;
+        return m;
+      })
+      .catch(function (e) {
+        if (global.console) console.error('VJNative: SQLite plugin failed to load —', e);
+        return null;
+      });
+  }
+
+  /* The native implementation, straight off the Capacitor bridge. */
+  function sqlitePlugin() {
+    if (!isNative) return null;
+    var p = plugins.CapacitorSQLite;
+    if (!p && global.Capacitor && global.Capacitor.Plugins) p = global.Capacitor.Plugins.CapacitorSQLite;
+    return p || null;
   }
 
   global.VJNative = {
@@ -85,6 +105,7 @@
     haptic: haptic,
     onBack: onBack,
     statusBarHeight: statusBarHeight,
-    loadSqlite: loadSqlite
+    loadSqlite: loadSqlite,
+    sqlitePlugin: sqlitePlugin
   };
 })(window);

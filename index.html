@@ -97,6 +97,14 @@
 <main class="main" id="main">
 
   <!-- top app bar -->
+  <div class="store-warn" id="storeWarn" hidden role="alert">
+    <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+    <div>
+      <b>Storage fallback</b>
+      <span id="storeWarnText">The private database could not be opened, so trades are being saved in the app's browser storage instead. Export a backup if this continues.</span>
+    </div>
+  </div>
+
   <header class="appbar">
     <div class="appbar-in">
       <div class="appbar-titles">

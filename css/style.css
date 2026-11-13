@@ -1131,3 +1131,31 @@ body { transition: none; }
   body { background: #fff; color: #000; }
   .main { margin: 0; padding: 0; }
 }
+
+/* storage fallback warning -------------------------------------------------
+   Shown when the private database could not be opened and the app fell back
+   to browser storage. It must never be invisible: a storage problem that
+   looks like "no trades" is indistinguishable from data loss. */
+.store-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  border-radius: var(--r-card);
+  background: var(--glass-2);
+  border: 1px solid var(--stroke-2);
+  box-shadow: var(--sh-panel);
+  color: var(--ink-2);
+}
+.store-warn[hidden] { display: none; }
+.store-warn .ic {
+  width: 19px; height: 19px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--ink);
+}
+.store-warn b { display: block; color: var(--ink); font-size: 14px; font-weight: 600; }
+.store-warn span { display: block; font-size: 12.5px; line-height: 1.45; margin-top: 2px; }

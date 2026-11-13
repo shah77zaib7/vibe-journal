@@ -49,12 +49,19 @@ if (fs.existsSync(path.join(ROOT, 'sw.js'))) {
 }
 
 /* bundle the SQLite plugin — it is the only dependency that needs a bundler.
-   @capacitor/core is bundled too, but registerPlugin() resolves the native
-   plugin through the global Capacitor bridge at runtime, so this is safe. */
-const sqliteEntry = path.join(ROOT, 'node_modules/@capacitor-community/sqlite/dist/plugin.js');
+   IMPORTANT: bundle dist/esm/definitions.js, NOT dist/plugin.js.
+
+   dist/plugin.js is a UMD bundle that expects a global `capacitorExports`
+   (from @capacitor/core) to exist. Bundling it produces a file with no ESM
+   exports at all, and importing it throws "capacitorExports is not
+   defined" — which used to fail silently and leave the Android app storing
+   nothing. dist/esm/definitions.js has proper `export class` statements and
+   no @capacitor/core dependency; the native implementation itself comes
+   from the Capacitor bridge (window.Capacitor.Plugins.CapacitorSQLite). */
+const sqliteEntry = path.join(ROOT, 'node_modules/@capacitor-community/sqlite/dist/esm/definitions.js');
 if (fs.existsSync(sqliteEntry)) {
   const out = path.join(OUT, 'vendor', 'cap-sqlite.js');
-  console.log('▸ bundling @capacitor-community/sqlite → www/vendor/cap-sqlite.js');
+  console.log('▸ bundling @capacitor-community/sqlite (definitions) → www/vendor/cap-sqlite.js');
   try {
     const esbuild = require('esbuild');
     esbuild.buildSync({
@@ -69,6 +76,20 @@ if (fs.existsSync(sqliteEntry)) {
     console.warn('  ! esbuild failed — native SQLite will fall back to the web store');
     console.warn('  ', e.message);
   }
+
+  /* Verify the bundle really exposes what js/native-store.js imports. A
+     silent failure here is what made the Android app lose every trade, so
+     it must break the build, not warn. */
+  const bundle = fs.readFileSync(out, 'utf8');
+  const missing = ['SQLiteConnection', 'SQLiteDBConnection']
+    .filter((n) => !new RegExp('export\\s*\\{[^}]*\\b' + n + '\\b').test(bundle) &&
+                     !new RegExp('export\\s+(const|class|function)\\s+' + n + '\\b').test(bundle));
+  if (missing.length) {
+    console.error(`✗ cap-sqlite.js is missing export(s): ${missing.join(', ')}`);
+    console.error('  The Android app would silently fail to save anything. Aborting.');
+    process.exit(1);
+  }
+  console.log('  ✓ bundle exports SQLiteConnection + SQLiteDBConnection');
 }
 
 /* report */

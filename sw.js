@@ -4,7 +4,7 @@
    ========================================================================== */
 'use strict';
 
-var VERSION = 'v1.4.0';
+var VERSION = 'v1.4.1';
 var CACHE = 'vibejournal-' + VERSION;
 
 var SHELL = [

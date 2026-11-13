@@ -12,9 +12,75 @@
   var conn = null;         // SQLiteConnection
   var db = null;           // SQLiteDBConnection
   var ready = null;        // promise
+  var failure = null;      // why it failed, if it did
 
   function isNative() {
     return !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+  }
+
+  /**
+   * Open the database.
+   *
+   * This REJECTS on failure. It used to resolve with null, and every method
+   * below returned a harmless default when that happened — so a broken
+   * plugin looked exactly like a working app that happened to have no
+   * trades. That is how the Android app came to store nothing at all.
+   * A failure must be loud, so the app can fall back to the browser store
+   * and say so.
+   */
+  function init() {
+    if (ready) return ready;
+    if (!isNative()) return Promise.reject(new Error('Not running natively.'));
+
+    ready = Promise.resolve()
+      .then(function () {
+        var bridge = global.VJNative && global.VJNative.sqlitePlugin
+          ? global.VJNative.sqlitePlugin()
+          : null;
+        if (!bridge) throw new Error('The Capacitor SQLite bridge is not available.');
+        return global.VJNative.loadSqlite().then(function (mod) {
+          return { bridge: bridge, mod: mod };
+        });
+      })
+      .then(function (r) {
+        if (!r.mod) throw new Error('The SQLite plugin bundle failed to load.');
+        var sqlite = new r.mod.SQLiteConnection(r.bridge);
+        return sqlite.init()
+          .then(function () { return sqlite.checkConnectionsConsistency(); })
+          .then(function () { return sqlite.isConnection(DB_NAME, false); })
+          .then(function (r) {
+            if (r && r.result) return sqlite.retrieveConnection(DB_NAME, false);
+            return sqlite.createConnection(DB_NAME, false, 'no-encryption', 1, false)
+              .then(function () { return sqlite.retrieveConnection(DB_NAME, false); });
+          })
+          .then(function (c) {
+            conn = c;
+            return c.open();
+          })
+          .then(function () {
+            return conn.execute([
+              'PRAGMA foreign_keys = ON',
+              'CREATE TABLE IF NOT EXISTS trades (' +
+                'id TEXT PRIMARY KEY NOT NULL, dt INTEGER NOT NULL, symbol TEXT, direction TEXT, ' +
+                'entry REAL, sl REAL, tp REAL, lots REAL, riskMode TEXT, risk REAL, riskAmount REAL, ' +
+                'plannedRR REAL, strategy TEXT, result TEXT, pnl REAL, notes TEXT, tags TEXT, ' +
+                'shotId TEXT, createdAt INTEGER, updatedAt INTEGER)',
+              'CREATE INDEX IF NOT EXISTS idx_trades_dt ON trades(dt)',
+              'CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol)',
+              'CREATE TABLE IF NOT EXISTS shots (id TEXT PRIMARY KEY NOT NULL, data TEXT, type TEXT)',
+              'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY NOT NULL, value TEXT)'
+            ]);
+          })
+          .then(function () { return conn; });
+      })
+      .catch(function (e) {
+        failure = e;
+        ready = null;                 // allow one retry later
+        if (global.console) console.error(TAG, 'init failed —', e);
+        throw e;
+      });
+
+    return ready;
   }
 
   function toB64(blob) {
@@ -33,47 +99,6 @@
     return new Blob([arr], { type: type || 'image/jpeg' });
   }
 
-  function init() {
-    if (ready) return ready;
-    if (!isNative()) return Promise.resolve(null);
-
-    ready = global.VJNative.loadSqlite().then(function (mod) {
-      if (!mod) throw new Error('SQLite plugin unavailable');
-      var sqlite = new mod.SQLiteConnection(mod.CapacitorSQLite);
-      return sqlite.init()
-        .then(function () { return sqlite.checkConnectionsConsistency(); })
-        .then(function () { return sqlite.isConnection(DB_NAME, false); })
-        .then(function (r) {
-          if (r && r.result) return sqlite.retrieveConnection(DB_NAME, false);
-          return sqlite.createConnection(DB_NAME, false, 'no-encryption', 1, false)
-            .then(function () { return sqlite.retrieveConnection(DB_NAME, false); });
-        })
-        .then(function (c) {
-          conn = c;
-          return c.open();
-        })
-        .then(function () {
-          return conn.execute([
-            'PRAGMA foreign_keys = ON',
-            'CREATE TABLE IF NOT EXISTS trades (' +
-              'id TEXT PRIMARY KEY NOT NULL, dt INTEGER NOT NULL, symbol TEXT, direction TEXT, ' +
-              'entry REAL, sl REAL, tp REAL, lots REAL, riskMode TEXT, risk REAL, riskAmount REAL, ' +
-              'plannedRR REAL, strategy TEXT, result TEXT, pnl REAL, notes TEXT, tags TEXT, ' +
-              'shotId TEXT, createdAt INTEGER, updatedAt INTEGER)',
-            'CREATE INDEX IF NOT EXISTS idx_trades_dt ON trades(dt)',
-            'CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol)',
-            'CREATE TABLE IF NOT EXISTS shots (id TEXT PRIMARY KEY NOT NULL, data TEXT, type TEXT)',
-            'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY NOT NULL, value TEXT)'
-          ]);
-        })
-        .then(function () { return conn; });
-    }).catch(function (e) {
-      if (global.console) console.warn(TAG, 'init failed', e);
-      ready = null;
-      return null;
-    });
-    return ready;
-  }
 
   function rowToTrade(r) {
     if (!r) return null;
@@ -269,6 +294,8 @@
     available: isNative,
     isAvailable: isNative,
     init: init,
+    // the reason the native store could not open, if it could not
+    failure: function () { return failure; },
     allTrades: allTrades,
     getTrade: getTrade,
     putTrade: putTrade,
