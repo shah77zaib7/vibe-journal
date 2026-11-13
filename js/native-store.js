@@ -45,11 +45,12 @@
       .then(function (r) {
         if (!r.mod) throw new Error('The SQLite plugin bundle failed to load.');
         var sqlite = new r.mod.SQLiteConnection(r.bridge);
-        return sqlite.init()
-          .then(function () { return sqlite.checkConnectionsConsistency(); })
+        // NOTE: there is no init() — neither on the wrapper class nor on the
+        // native bridge. The flow starts at checkConnectionsConsistency.
+        return sqlite.checkConnectionsConsistency()
           .then(function () { return sqlite.isConnection(DB_NAME, false); })
-          .then(function (r) {
-            if (r && r.result) return sqlite.retrieveConnection(DB_NAME, false);
+          .then(function (chk) {
+            if (chk && chk.result) return sqlite.retrieveConnection(DB_NAME, false);
             return sqlite.createConnection(DB_NAME, false, 'no-encryption', 1, false)
               .then(function () { return sqlite.retrieveConnection(DB_NAME, false); });
           })

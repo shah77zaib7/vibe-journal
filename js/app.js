@@ -1566,7 +1566,7 @@
       if (S.view === 'dashboard' || S.view === 'analytics') renderAll();
     }, 900000);
 
-    $('#appVer').textContent = '1.4.1';
+    $('#appVer').textContent = '1.4.2';
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

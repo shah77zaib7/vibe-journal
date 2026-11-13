@@ -202,20 +202,32 @@ will never silently stop saving your trades.
 > ### A bug worth knowing about
 >
 > The Android app once stored **nothing at all** and looked perfectly
-> healthy. The SQLite plugin was bundled from its UMD entry, which expects
-> a global `capacitorExports` to exist; the bundle therefore threw on
-> import, the native store caught the error and returned `null`, and every
-> method then returned a harmless default — `allTrades()` returned `[]`,
-> `putTrade()` returned without writing. The UI updated optimistically, so
-> it looked like the app worked.
+> healthy. The UI updated optimistically, so every trade looked saved — and
+> then vanished when the app was reopened.
 >
-> Two things changed so it cannot happen again:
+> Three separate bugs were stacked on top of each other, all in the Android
+> path, which is why no browser test ever caught them:
+>
+> 1. **The bundle was built from the plugin's UMD entry**, which expects a
+>    global `capacitorExports` to exist. It threw on import, the store
+>    caught the error, and every method returned a harmless default.
+> 2. **The bundle was looked for in the wrong place.** A dynamic `import()`
+>    inside a *classic* script resolves relative to the *script*, so
+>    `js/native.js` asked for `/js/vendor/cap-sqlite.js` and got a 404.
+> 3. **`sqlite.init()` does not exist** — not on the wrapper class, not on
+>    the native bridge. The call threw a `TypeError`.
+>
+> Three things changed so it cannot happen again:
 >
 > 1. **The bundle is built from the plugin's real ESM entry**, and the
 >    build now *fails* if the bundle does not export `SQLiteConnection`.
 > 2. **The store rejects instead of swallowing.** A failure is recorded,
 >    surfaced to the app, and the app falls back to browser storage with a
 >    visible warning.
+> 3. **The native path has its own test suite** that runs the *real* plugin
+>    class against a mock native bridge — in a real browser, from a real
+>    classic script, so a wrong import path or a missing method fails the
+>    build.
 
 ## Privacy
 

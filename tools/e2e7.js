@@ -105,30 +105,38 @@ function selectSql(file, sql, values) {
   return [];
 }
 
-/* ══════════════ the mock plugin ══════════════ */
+/* ══════════════ the mock native bridge ══════════════ */
+/* This mocks the NATIVE side of the plugin (the Capacitor bridge), not the
+   JS wrapper. The real SQLiteConnection class from the built bundle is used
+   on top of it, so the test exercises the real protocol — the previous
+   version mocked the wrapper instead, which let a missing method()
+   (sqlite.init) slip through unnoticed. */
 
-function makePlugin(file) {
-  class MockDBConnection {
-    open() { return Promise.resolve(); }
-    run(sql, values) { applySql(file, sql, values || []); return Promise.resolve({ changes: 1 }); }
-    query(sql, values) { return Promise.resolve({ values: selectSql(file, sql, values || []) }); }
-    execute(list) { (list || []).forEach(s => applySql(file, s, [])); return Promise.resolve(); }
-    executeSet(stmts) { (stmts || []).forEach(s => applySql(file, s.statement, s.values || [])); return Promise.resolve(); }
-  }
-  class MockSQLiteConnection {
-    constructor(bridge) { this.bridge = bridge; this.conns = {}; }
-    init() { return Promise.resolve(); }
-    checkConnectionsConsistency() { return Promise.resolve(); }
-    isConnection(db) { return Promise.resolve({ result: !!this.conns[db] }); }
-    createConnection(db) { this.conns[db] = new MockDBConnection(); return Promise.resolve(); }
-    retrieveConnection(db) { return Promise.resolve(this.conns[db]); }
-  }
-  return { MockSQLiteConnection, bridge: { name: 'mock' } };
+function makeBridge(file) {
+  return {
+    /* the wrapper calls these on the bridge */
+    checkConnectionsConsistency: () => Promise.resolve({ result: true }),
+    createConnection: () => Promise.resolve(),
+    open: () => Promise.resolve(),
+    close: () => Promise.resolve(),
+    isDBExists: () => Promise.resolve({ result: true }),
+    isDBOpen: () => Promise.resolve({ result: true }),
+    getDatabaseList: () => Promise.resolve({ result: [] }),
+    deleteDatabase: () => Promise.resolve(),
+    query: (opts) => Promise.resolve({ values: selectSql(file, opts.statement, opts.values || []) }),
+    run: (opts) => { applySql(file, opts.statement, opts.values || []); return Promise.resolve({ changes: { rows: { affectedRows: 1 } } }); },
+    execute: (opts) => { (opts.statements || []).forEach(s => applySql(file, s, [])); return Promise.resolve({}); },
+    executeSet: (opts) => {
+      let n = 0;
+      (opts.set || []).forEach(s => { applySql(file, s.statement, s.values || []); n++; });
+      return Promise.resolve({ changes: { rows: { affectedRows: n } } });
+    }
+  };
 }
 
 /* ══════════════ run native-store.js in a sandbox ══════════════ */
 
-function loadStore({ plugin, sqliteModule, broken }) {
+function loadStore({ sqliteModule, bridge, broken }) {
   const sandbox = {
     console: { log() {}, warn() {}, error() {} },
     Promise, setTimeout, clearTimeout,
@@ -147,7 +155,7 @@ function loadStore({ plugin, sqliteModule, broken }) {
   sandbox.Capacitor = { isNativePlatform: () => true, Plugins: {} };
   sandbox.VJNative = {
     isNative: true,
-    sqlitePlugin: () => (broken ? null : plugin.bridge),
+    sqlitePlugin: () => (broken ? null : bridge),
     loadSqlite: () => (broken
       ? Promise.reject(new Error('SQLite plugin bundle failed to load.'))
       : Promise.resolve(sqliteModule))
@@ -158,7 +166,85 @@ function loadStore({ plugin, sqliteModule, broken }) {
   return { store: sandbox.VJNativeStore, sandbox };
 }
 
+
+/* ══════════════ a static server for www/ (the staged app) ══════════════ */
+function serveDir(dir, port) {
+  const http = require('http');
+  const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+  const srv = http.createServer((req, res) => {
+    let p = decodeURIComponent(req.url.split('?')[0]);
+    if (p === '/') p = '/index.html';
+    const f = path.join(dir, p);
+    if (!f.startsWith(dir) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end('404'); return; }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
+    res.end(fs.readFileSync(f));
+  });
+  return new Promise((resolve) => srv.listen(port, () => resolve(srv)));
+}
+
+/* The mock bridge, as a string so it can be injected into the page. */
+const BRIDGE_SRC = String.raw`
+(function () {
+  window.__vjFile = { trades: {}, shots: {}, meta: {} };
+  const file = window.__vjFile;
+  function applySql(sql, values) {
+    const s = String(sql).trim(); let m;
+    m = s.match(/^INSERT OR REPLACE INTO trades\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (m) { const c=m[1].split(',').map(x=>x.trim()); const row={}; c.forEach((k,i)=>row[k]=values[i]); file.trades[row.id]=row; return; }
+    m = s.match(/^INSERT OR REPLACE INTO shots\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (m) { const c=m[1].split(',').map(x=>x.trim()); const row={}; c.forEach((k,i)=>row[k]=values[i]); file.shots[row.id]=row; return; }
+    m = s.match(/^INSERT OR REPLACE INTO meta\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (m) { const c=m[1].split(',').map(x=>x.trim()); const row={}; c.forEach((k,i)=>row[k]=values[i]); file.meta[row.key]=row; return; }
+    m = s.match(/^DELETE FROM trades WHERE id\s*=\s*\?/i); if (m) { delete file.trades[values[0]]; return; }
+    m = s.match(/^DELETE FROM shots WHERE id\s*=\s*\?/i);  if (m) { delete file.shots[values[0]]; return; }
+    if (/^DELETE FROM trades/i.test(s)) { file.trades = {}; return; }
+    if (/^DELETE FROM shots/i.test(s))  { file.shots = {}; return; }
+    if (/^DELETE FROM meta/i.test(s))   { file.meta = {}; return; }
+  }
+  function selectSql(sql, values) {
+    const s = String(sql).trim();
+    if (/^SELECT COUNT\(\*\) AS n FROM trades/i.test(s)) return [{ n: Object.keys(file.trades).length }];
+    if (/^SELECT \* FROM trades WHERE id\s*=\s*\?/i.test(s)) { const r=file.trades[values[0]]; return r?[r]:[]; }
+    if (/^SELECT \* FROM trades/i.test(s)) { let rows=Object.values(file.trades);
+      if (/ORDER BY dt DESC/i.test(s)) rows=rows.slice().sort((a,b)=>Number(b.dt)-Number(a.dt)); return rows; }
+    if (/^SELECT \* FROM shots WHERE id\s*=\s*\?/i.test(s)) { const r=file.shots[values[0]]; return r?[r]:[]; }
+    if (/^SELECT \* FROM shots/i.test(s)) return Object.values(file.shots);
+    if (/^SELECT value FROM meta WHERE key\s*=\s*\?/i.test(s)) { const r=file.meta[values[0]]; return r?[r]:[]; }
+    if (/^SELECT key, value FROM meta/i.test(s)) return Object.values(file.meta);
+    return [];
+  }
+  window.Capacitor = {
+    isNativePlatform: () => true,
+    Plugins: {
+      CapacitorSQLite: {
+        checkConnectionsConsistency: () => Promise.resolve({ result: true }),
+        createConnection: () => Promise.resolve(),
+        open: () => Promise.resolve(),
+        close: () => Promise.resolve(),
+        isDBExists: () => Promise.resolve({ result: true }),
+        isDBOpen: () => Promise.resolve({ result: true }),
+        getDatabaseList: () => Promise.resolve({ result: [] }),
+        deleteDatabase: () => Promise.resolve(),
+        query: (o) => Promise.resolve({ values: selectSql(o.statement, o.values || []) }),
+        run: (o) => { applySql(o.statement, o.values || []); return Promise.resolve({ changes: { rows: { affectedRows: 1 } } }); },
+        execute: (o) => { (o.statements||[]).forEach(x => applySql(x, [])); return Promise.resolve({}); },
+        executeSet: (o) => { let n=0; (o.set||[]).forEach(x => { applySql(x.statement, x.values||[]); n++; }); return Promise.resolve({ changes: { rows: { affectedRows: n } } }); }
+      }
+    }
+  };
+})();
+`;
+
 (async () => {
+  /* the REAL plugin class, loaded from the bundle that actually ships */
+  let RealSQLiteConnection = null;
+  if (fs.existsSync(BUNDLE)) {
+    try {
+      const mod = await import('file://' + BUNDLE);
+      RealSQLiteConnection = mod.SQLiteConnection;
+    } catch (e) { /* reported by the checks below */ }
+  }
+
   /* ══════════════ 1. the bundle exports what we import ══════════════ */
   {
     const exists = fs.existsSync(BUNDLE);
@@ -190,9 +276,11 @@ function loadStore({ plugin, sqliteModule, broken }) {
   /* ══════════════ 2. the store round-trips data ══════════════ */
   {
     const file = makeFile();
-    const plugin = makePlugin(file);
-    const { MockSQLiteConnection } = plugin;
-    const { store } = loadStore({ plugin, sqliteModule: { SQLiteConnection: MockSQLiteConnection } });
+    const bridge = makeBridge(file);
+    const { store } = loadStore({
+      sqliteModule: { SQLiteConnection: RealSQLiteConnection },
+      bridge
+    });
 
     const trade = {
       id: 'native-1', dt: 1700000000000, symbol: 'EURUSD', direction: 'long',
@@ -243,17 +331,22 @@ function loadStore({ plugin, sqliteModule, broken }) {
   /* ══════════════ 3. data survives the app being closed and reopened ══════════════ */
   {
     const file = makeFile();
-    const plugin = makePlugin(file);
-    const { MockSQLiteConnection } = plugin;
+    const bridge = makeBridge(file);
 
     // first session
-    const first = loadStore({ plugin, sqliteModule: { SQLiteConnection: MockSQLiteConnection } });
+    const first = loadStore({
+      sqliteModule: { SQLiteConnection: RealSQLiteConnection },
+      bridge
+    });
     await first.store.putTrade({ id: 'persist-1', dt: 1700000000000, symbol: 'GBPUSD', pnl: 77, tags: [], createdAt: 1, updatedAt: 1 });
     await first.store.setMeta('settings', { balance: 999 });
     ok('the first session wrote its trade', (await first.store.allTrades()).length === 1);
 
     // the app is closed. A brand new store instance, same database file.
-    const second = loadStore({ plugin, sqliteModule: { SQLiteConnection: MockSQLiteConnection } });
+    const second = loadStore({
+      sqliteModule: { SQLiteConnection: RealSQLiteConnection },
+      bridge
+    });
     const trades = await second.store.allTrades();
     ok('the trade survives the app being closed and reopened', trades.length === 1, 'count=' + trades.length);
     ok('the reopened trade still has its values',
@@ -264,17 +357,19 @@ function loadStore({ plugin, sqliteModule, broken }) {
       !!settings && settings.balance === 999, JSON.stringify(settings));
 
     // and a third session, to be sure it is not a fluke
-    const third = loadStore({ plugin, sqliteModule: { SQLiteConnection: MockSQLiteConnection } });
+    const third = loadStore({
+      sqliteModule: { SQLiteConnection: RealSQLiteConnection },
+      bridge
+    });
     ok('and a third session still sees it', (await third.store.allTrades()).length === 1);
   }
 
   /* ══════════════ 4. a broken plugin fails LOUDLY ══════════════ */
   {
-    const plugin = makePlugin(makeFile());
-    const { MockSQLiteConnection } = plugin;
+    const bridge = makeBridge(makeFile());
 
     // (a) the bridge is missing entirely
-    const a = loadStore({ plugin, sqliteModule: { SQLiteConnection: MockSQLiteConnection }, broken: true });
+    const a = loadStore({ sqliteModule: { SQLiteConnection: RealSQLiteConnection }, broken: true });
     let threw = false, msg = '';
     try { await a.store.init(); } catch (e) { threw = true; msg = e.message; }
     ok('a missing SQLite bridge rejects (does not resolve quietly)', threw === true);
@@ -282,13 +377,13 @@ function loadStore({ plugin, sqliteModule, broken }) {
       a.store.failure ? '' : 'failure() was empty');
 
     // (b) the bundle fails to load
-    const b = loadStore({ plugin, sqliteModule: null, broken: true });
+    const b = loadStore({ sqliteModule: null, broken: true });
     threw = false;
     try { await b.store.init(); } catch (e) { threw = true; }
     ok('a failed plugin bundle rejects', threw === true);
 
     // (c) the bundle loads but has no SQLiteConnection — the exact bug
-    const c = loadStore({ plugin, sqliteModule: {}, broken: false });
+    const c = loadStore({ sqliteModule: {}, bridge, broken: false });
     threw = false;
     try {
       await c.store.allTrades();
@@ -300,9 +395,11 @@ function loadStore({ plugin, sqliteModule, broken }) {
   {
     // With a working plugin but a broken bridge, every method must reject
     // rather than resolve with a harmless default.
-    const plugin = makePlugin(makeFile());
-    const { MockSQLiteConnection } = plugin;
-    const { store } = loadStore({ plugin, sqliteModule: { SQLiteConnection: MockSQLiteConnection }, broken: true });
+    const bridge = makeBridge(makeFile());
+    const { store } = loadStore({
+      sqliteModule: { SQLiteConnection: RealSQLiteConnection },
+      broken: true
+    });
 
     const methods = ['allTrades', 'tradeCount', 'allMeta', 'allShots'];
     let allRejected = true;
@@ -367,6 +464,56 @@ function loadStore({ plugin, sqliteModule, broken }) {
     ok('the warning persists across a reload', stillWarned === true);
 
     await browser.close();
+  }
+
+
+  /* ══════════════ 7. the real app uses SQLite (not the fallback) ══════════════ */
+  {
+    const { chromium } = require('/usr/local/lib/node_modules/playwright');
+    const srv = await serveDir(path.join(ROOT, 'www'), 8098);
+    const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
+
+    // The staged app (www/) with a working native SQLite bridge. This is
+    // the Android app, minus the real plugin.
+    await page.addInitScript(BRIDGE_SRC);
+    await page.goto('http://localhost:8098/index.html', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1800);
+
+    const st = await page.evaluate(() => ({
+      backend: window.VJDB.backend(),
+      err: window.VJDB.nativeError() ? window.VJDB.nativeError().message : null,
+      warnHidden: document.querySelector('#storeWarn').hidden
+    }));
+
+    ok('the app uses SQLite, not the fallback', st.backend === 'sqlite', st.backend + ' / ' + st.err);
+    ok('no fallback warning is shown', st.warnHidden === true, JSON.stringify(st));
+
+    // write a trade and read it back
+    await page.evaluate(async () => {
+      await window.VJDB.putTrade({
+        id: 'native-live-1', dt: Date.now(), symbol: 'EURUSD', direction: 'long',
+        entry: 1.08, sl: 1.07, tp: 1.09, lots: 1, riskMode: 'percent', risk: 1,
+        riskAmount: 100, plannedRR: 2, strategy: 'Live', result: 'win', pnl: 250,
+        notes: 'written through SQLite', tags: ['live'], shotId: null,
+        createdAt: Date.now(), updatedAt: Date.now()
+      });
+    });
+    const read = await page.evaluate(async () => {
+      const t = await window.VJDB.getTrade('native-live-1');
+      return t ? { pnl: t.pnl, notes: t.notes, symbol: t.symbol, tags: t.tags } : null;
+    });
+    ok('a trade round-trips through the real SQLiteConnection',
+      !!read && read.pnl === 250 && read.symbol === 'EURUSD' &&
+      Array.isArray(read.tags) && read.tags.join(',') === 'live',
+      JSON.stringify(read));
+
+    const n = await page.evaluate(async () => (await window.VJDB.allTrades()).length);
+    ok('the trade is counted by the store', n === 1, 'count=' + n);
+
+    await browser.close();
+    srv.close();
   }
 
   console.log('');

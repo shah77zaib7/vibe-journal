@@ -69,11 +69,33 @@
 
   /* ---------- sqlite plugin (loaded lazily as an ES module) ---------- */
   var sqliteMod = null;
+
+  /* Where the bundle lives.
+     The bundle sits at <app root>/vendor/cap-sqlite.js, but js/native.js
+     sits at <app root>/js/. A dynamic import() inside a CLASSIC script
+     resolves relative to the SCRIPT, so './vendor/cap-sqlite.js' from
+     /js/native.js asks for /js/vendor/cap-sqlite.js — a 404. That 404 was
+     why the Android app could never open its database.
+     Resolve against the document instead. */
+  function bundleUrls() {
+    var urls = [];
+    try { urls.push(new URL('vendor/cap-sqlite.js', document.baseURI).href); } catch (e) { /* noop */ }
+    try { urls.push(new URL('/vendor/cap-sqlite.js', document.baseURI).href); } catch (e) { /* noop */ }
+    return urls;
+  }
+
   function loadSqlite() {
     if (sqliteMod) return Promise.resolve(sqliteMod);
     if (!isNative) return Promise.resolve(null);
-    return import('./vendor/cap-sqlite.js')
-      .then(function (m) {
+
+    var urls = bundleUrls();
+    if (!urls.length) return Promise.resolve(null);
+
+    function attempt(i) {
+      if (i >= urls.length) {
+        return Promise.reject(new Error('The SQLite plugin bundle could not be located.'));
+      }
+      return import(urls[i]).then(function (m) {
         // The bundle MUST export these. If it does not, the Android app
         // would silently store nothing, so refuse loudly here rather than
         // letting a broken bundle turn into silent data loss.
@@ -82,11 +104,16 @@
         }
         sqliteMod = m;
         return m;
-      })
-      .catch(function (e) {
-        if (global.console) console.error('VJNative: SQLite plugin failed to load —', e);
-        return null;
+      }).catch(function (e) {
+        if (global.console) console.warn('VJNative: SQLite bundle failed at ' + urls[i] + ' —', e.message);
+        return attempt(i + 1);
       });
+    }
+
+    return attempt(0).catch(function (e) {
+      if (global.console) console.error('VJNative: SQLite plugin failed to load —', e);
+      return null;
+    });
   }
 
   /* The native implementation, straight off the Capacitor bridge. */
